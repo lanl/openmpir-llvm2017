@@ -1,0 +1,19 @@
+Fibonacci result for 48 is 4807526976
+
+Program             = Fibonacci
+Parameters          = N=48
+Model               = OpenMP (using tasks)
+Embedded cut-off    = none
+# of Threads        = 64
+Verification        = Not requested
+Time Program        = 227.805744 seconds
+Execution Date      = 2017/08/31;03:55
+Execution Message   = 
+Architecture        = Linux-x86_64;64
+Load Avg [1:5:15]   = 64.00;64.00;62.06
+Compilation Date    = 2017/08/30;11:56
+Compilation Message = 
+Compiler            = clang -fopenmp -I/home/stelleg/usr/include/
+Compiler Flags      = -c -I../..//common -O3   -I.
+Linker              = clang -fopenmp -L/home/stelleg/usr/lib
+Linker Flags        = -O3   

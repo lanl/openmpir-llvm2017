@@ -1,0 +1,51 @@
+Computing floorplan  completed!
+Minimum area = 896
+
+AAAAAAAAAA                      
+AAAAAAAAAA                      
+AAAAAAAAAA                      
+ BBBBBBCCCCCCCCCCCC             
+ BBBBBBCCCCCCCCCCCC             
+ BBBBBBCCCCCCCCCCCC             
+ BBBBBBCCCCCCCCCCCC             
+EEEEE  CCCCCCCCCCCC             
+EEEEE           DDDDDDDD        
+EEEEE           DDDDDDDD        
+EEEEE           DDDDDDDD        
+EEEEE           HHHHIIIJJJJJJ   
+EEEEE           HHHHIIIJJJJJJ   
+EEEEE           HHHHIIIJJJJJJ   
+EEEEE       LLLL MMMMMMJJJJJJ   
+ FFFGGGGGGGGLLLL MMMMMMJJJJJJ   
+ FFFGGGGGGGGLLLL MMMMMMNNNNNNNNN
+ FFFGGGGGGGGLLLL MMMMMMNNNNNNNNN
+KKKKGGGGGGGGLLLL MMMMMMNNNNNNNNN
+KKKK        LLLL MMMMMM   PPPPPP
+KKKKOOOOOOOOOOOOOOOOOOOOOOPPPPPP
+KKKKOOOOOOOOOOOOOOOOOOOOOOPPPPPP
+    OOOOOOOOOOOOOOOOOOOOOOPPPPPP
+        QQQQQQQQRRRSSSSSSSSTTTTT
+        QQQQQQQQRRRSSSSSSSSTTTTT
+        QQQQQQQQRRRSSSSSSSSTTTTT
+        QQQQQQQQRRR        TTTTT
+        QQQQQQQQ           TTTTT
+
+Program             = Floorplan
+Parameters          = inputs/floorplan/input.20
+Model               = OpenMP (using tasks)
+Embedded cut-off    = none
+# of Threads        = 64
+Verification        = Not requested
+Time Program        = 2.140329 seconds
+Nodes               = 68160480.00
+Nodes/Sec           = 31845795.67
+Execution Date      = 2017/08/31;04:29
+Execution Message   = 
+Architecture        = Linux-x86_64;64
+Load Avg [1:5:15]   = 51.24;49.39;51.16
+Compilation Date    = 2017/08/30;11:56
+Compilation Message = 
+Compiler            = clang -fopenmp -I/home/stelleg/usr/include/
+Compiler Flags      = -c -I../..//common -O3   -I.
+Linker              = clang -fopenmp -L/home/stelleg/usr/lib
+Linker Flags        = -O3   

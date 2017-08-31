@@ -1,0 +1,29 @@
+
+Number of levels    = 5
+Cities per level    = 24
+Population ratio    = 10
+Simulation time     = 365
+Assess time         = 2
+Convalescence time  = 12
+Initial seed        = 23
+Get sick prob.      = 0.002000
+Convalescence prob. = 0.100000
+Realloc prob.       = 0.150000
+
+Program             = Health
+Parameters          = inputs/health/large.input
+Model               = OpenMP (using tasks)
+Embedded cut-off    = none
+# of Threads        = 64
+Verification        = Not requested
+Time Program        = 13.884446 seconds
+Execution Date      = 2017/08/31;04:32
+Execution Message   = 
+Architecture        = Linux-x86_64;64
+Load Avg [1:5:15]   = 61.65;54.18;52.67
+Compilation Date    = 2017/08/30;11:58
+Compilation Message = 
+Compiler            = icc -fopenmp -I/home/stelleg/usr/include/
+Compiler Flags      = -c -I../..//common -O3   -I.
+Linker              = icc -fopenmp -L/home/stelleg/usr/lib
+Linker Flags        = -O3   -lm
