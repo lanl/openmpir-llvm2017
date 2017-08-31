@@ -289,7 +289,7 @@ While we did implement the codegen for the \texttt{task\_spawn} and
 pragmas, the implementation is incomplete. Currently, any clauses modifying the 
 behaviour of the pragmas is ignored. Probably the most common semantics this
 will change of variable semantics, e.g. \texttt{shared} vs. \texttt{private}.
-Surprisingly, this had very effect on the correctness of the entire Barcelona
+Surprisingly, this had little effect on the correctness of the entire Barcelona
 OpenMP task suite. Indeed, it is likely that fixing this issue would increase
 the performance of this work marginally, due to reducing the number of memory
 copies for variables declared \texttt{private} in OpenMP code. 
