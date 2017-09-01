@@ -2,7 +2,7 @@
 
 \usepackage{booktabs} % For formal tables
 \usepackage{multicol}
-\usepackage{graphicx}
+\graphicspath{{./figs/}}
 
 % Dejavu fonts have unicode character support
 % \usepackage{DejaVuSansMono}
@@ -199,7 +199,7 @@ final result.
 morekeywords={omp, for, pragma, omp, task, taskwait}}
 \begin{figure*}
 \begin{center}
-\begin{tabular}{| c c  c | c  c  c | c c c |}
+\begin{tabular}{| c c c | c c c | c c c |}
 \hline
  & 
 \begin{lstlisting}
@@ -335,21 +335,80 @@ remove the \texttt{task} pragma. This was the only change required to the
 source code. Our temporary no-op shortcut, of course, doesn't follow the OpenMP
 specification, and should be addressed by future work. 
 
+All code used for the implementation is available at
+\texttt{https://github.com/lanl/openmpir}. The version used for this paper is
+tagged as LLVM17.
+
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
 \texttt{fib} example from Section~\ref{Sec:OpenMP}. In Figure~\ref{Fig:Example}
-we show how the code generated differs between the original Clang
-implementation, which generates vanilla LLVM with calls into the OpenMP
-runtime, and. 
+we show what Tapir code is generated.  
 
-\section{Evaluation}
+\begin{figure*}
+\begin{tabular}{| c c c | c c c |}
+\hline
+ & 
+\begin{lstlisting}
+int fib(int n) 
+{                    // A
+  if (n < 2)
+    return n;
+  else
+  {
+    int x, y;
+    #pragma omp task
+      x = fib(n-1);  // B
+    #pragma omp task
+      y = fib(n-2);  // C
+    #pragma omp taskwait
+    return (x+y);    // D
+  }
+}
+\end{lstlisting}
+& & &
+\begin{lstlisting}
+if.end:                                 
+  detach within %syncreg, label %det.achd, label %det.cont
+
+det.achd:                                 
+  %2 = load i32, i32* %n.addr, align 4
+  %sub = sub nsw i32 %2, 1
+  %call = call i32 @fib(i32 %sub)
+  store i32 %call, i32* %x, align 4
+  reattach within %syncreg, label %det.cont
+
+det.cont:                                   
+  detach within %syncreg, label %det.achd1, label %det.cont4
+
+det.achd1:                                
+  %3 = load i32, i32* %n.addr, align 4
+  %sub2 = sub nsw i32 %3, 2
+  %call3 = call i32 @fib(i32 %sub2)
+  store i32 %call3, i32* %y, align 4
+  reattach within %syncreg, label %det.cont4
+
+det.cont4:                                  
+  sync within %syncreg, label %sync.continue
+\end{lstlisting}
+ &  \\
+\hline
+\end{tabular}
+
+\caption{Compilation to Tapir}
+\label{Fig:Example}
+\end{figure*}
+
+\section{Evaluation} \label{Sec:Evaluation}
 
 For evaluation we compared performance on the Barcelona OpenMP task suite to 
 existing OpenMP implementations. The Barcelona OpenMP task suite is a set of 
 tests intended to test performance of OpenMP implementations using both
 irregular and regular tasking. The benchmarks are described in
-Figure~\ref{Fig:benchmark_desc}. 
+Figure~\ref{Fig:benchmark_desc}. The benchmark suite has added an unbalanced
+tree search benchmark since the paper was published.  Unfortunately, this seems
+to be buggy, and failed on every implementation for even medium input sizes. We
+have therefore left it out of our evaluation.
 
 \begin{itemize}
 \item \texttt{Alignment}: aligns all protein sequences from  an  input
@@ -414,13 +473,33 @@ done by dividing each dimension of the matrix into  two  sections  of  equal
 size. For each decomposition a task is created. 
 \end{itemize}
 
-In particular, we compare to GCC 7.1, Clang 4.0.1, and Intel 17.0.0. The
-machine used is a two socket Intel Xeon E5-2693 v3 machine with 132GB of
-memory, running Linux 4.11.4. It's worth noting that each of the other 
-implementations comes with it's own runtime. In this sense, performance is
-a function of both the compiler and any optimizations it's able to perform, 
-and the runtime. Understanding the interaction of these two parts is non-trivial,
-as we will see when discussing results.
+There are two classes of input sizes for the benchmarks. Some, like Floorplan,
+require input files. For each of these, we chose the largest provided. For the
+benchmarks with a parameter to adjust the size of the input, we attempted to 
+choose a parameter size so that the fastest implementation was on the order of
+seconds. The exact inputs used are:
+
+\begin{itemize}
+\item \texttt{Alignment: -f prot.100.aa} 
+\item \texttt{FFT: -n 335544320}
+\item \texttt{Fibonacci: -n 48}
+\item \texttt{Floorplan: -f input.20}
+\item \texttt{Health: -f large.input}
+\item \texttt{NQueens: -n 15}
+\item \texttt{Sort -n 335544320}
+\item \texttt{SparseLU: -n 100 -m 100}
+\item \texttt{Strassen: -n 8192}
+\end{itemize}
+
+For other implementations, we compare to GCC 7.1, Clang 4.0.1, and Intel
+17.0.0. The machine used is a two socket Intel Xeon E5-2693 v3 machine with
+132GB of memory, running Linux 4.11.4. All benchmarks were run using all 64
+hyper-threads. 32 thread tests were done as well and showed qualitatively
+similar results. It's worth noting that each of the other implementations comes
+with it's own runtime. In this sense, performance is a function of both the
+compiler and any optimizations it's able to perform, and the runtime.
+Understanding the interaction of these two parts is non-trivial, as we will see
+when discussing results. 
 
 As mentioned in the Section~\ref{Sec:Implementation}, the gaps in the implementation
 changed program behaviour in a couple cases. In the case of \texttt{FFT}, we were
@@ -444,15 +523,20 @@ trade-off given the performance increase witnessed.
 In our evaluation, we caught three kinds of errors:
 
 \begin{itemize}
-\item Non-determinism in result correctness
 \item Segmentation faults
 \item Timeouts (10 Minutes)
+\item Non-determinism in result correctness
 \end{itemize}
 
 We set a timeout of 10 minutes, as at least one implementation was always
 finishing within ~10 seconds, anything running more than 60 times slower
-becomes irrelevant. DUe to time constraints, correctness checks were not
+becomes irrelevant. Due to time constraints, correctness checks were not
 performed on every run, so it is possible some non-determinism was missed. 
+
+Each variant was run 10 times, with the height of the bars representing the
+mean and the error bars representing standard deviation. In cases where there
+was timeout or segmentation fault, no time is reported, and the run is marked
+as faulty.
 
 \section{Results} \label{Sec:Results}
 
@@ -485,7 +569,6 @@ benchmarks, and each bar represents one of the implementations.
 \caption{Barcelona OpenMP Task Suite Results (continued)}
 \end{figure*}
 
-
 The failure modes enumerated in Section~\ref{Sec:Evaluation} are denoted by 
 asterisks in the implementation labels on the X axis. One asterisk refers to
 some incorrect answers. Two asterisks refers to time-out. Three asterisks
@@ -513,6 +596,17 @@ For example, on the \texttt{FFT} benchmark, while our Tapir implementation was r
 in under 5 seconds, the GCC implementation was timing out at 600 seconds, so
 was at least 100 times slower.
 
+Putting failures aside for the moment, performance for our implementation is
+quite strong, generally outperforming or matching the best of existing
+implementations. For benchmarks where the overhead to work ratio is high is 
+where the Tapir implementation really shines. For example, for the
+\texttt{Fibonacci} benchmark, our implementation finishes significantly faster
+than any of the others. While ICC failed for that sized input, we did test with
+smaller inputs and found its similarly outpaced by the Tapir implementation.
+\texttt{NQueens} and \texttt{FFT} show similar behaviour, to lesser degrees. In 
+contrast, benchmarks that have a lower overhead to work ratio unsurprisingly 
+differ less in performance. For example,  
+
 \subsection{Forensics}
 
 In this section we attempt to understand \emph{why} the performance varies in the ways 
@@ -531,7 +625,7 @@ work that this paper is responsible for is only the frontend. All performance
 gains due to the Cilk runtime we sadly cannot claim credit for.
 
 Another import consideration is that we can break reasons for performance
-discrepencies into a few categories: 
+discrepancies into a few categories: 
 
 \begin{itemize}
 \item Front-end code generation
