@@ -1,16 +1,16 @@
-Fibonacci result for 48 is 4807526976
+Fibonacci result for 42 is 267914296
 
 Program             = Fibonacci
-Parameters          = N=48
+Parameters          = N=42
 Model               = OpenMP (using tasks)
 Embedded cut-off    = none
 # of Threads        = 64
 Verification        = Not requested
-Time Program        = 227.805744 seconds
-Execution Date      = 2017/08/31;03:55
+Time Program        = 12.731743 seconds
+Execution Date      = 2017/09/05;21:39
 Execution Message   = 
 Architecture        = Linux-x86_64;64
-Load Avg [1:5:15]   = 64.00;64.00;62.06
+Load Avg [1:5:15]   = 62.30;33.28;13.49
 Compilation Date    = 2017/08/30;11:56
 Compilation Message = 
 Compiler            = clang -fopenmp -I/home/stelleg/usr/include/

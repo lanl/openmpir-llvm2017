@@ -16,7 +16,7 @@ PDF = ${PAPERS:%.tex=%.pdf}
 all:  ${PDF}
 
 
-%.pdf:  %.dtx   $(PACKAGE).cls
+%.pdf:  %.dtx   $(PACKAGE).cls figs/*.pdf
 	pdflatex $<
 	- bibtex $*
 	pdflatex $<

@@ -13,7 +13,7 @@ pdat['sort'] = {'title' : "Sort"}
 pdat['sparselu'] = {'title' : "SparseLU"}
 pdat['strassen'] = {'title' : "Strassen"}
 
-types = ['tapir', 'gcc', 'icc', 'clang']
+types = ['tapir', 'icc', 'clang', 'gcc']
 
 for p in pdat:
     for t in types:
@@ -25,15 +25,19 @@ for p in pdat:
         print(np.mean(pdat[p][t]))
 
 width=0.75
-ind = np.arange(len(types))
 
 for p in pdat:
     fig, ax = plt.subplots()
-    ax.bar(ind, [np.mean(pdat[p][t]) for t in types], width, yerr=[np.std(pdat[p][t]) for t in types])
+    means = [np.mean(pdat[p][t]) for t in types]
+    means = [m for m in means if not np.isnan(m)]
+    stds = [np.std(pdat[p][t]) for t in types]
+    stds = [m for m in stds if not np.isnan(m)]
+    ind = np.arange(len(means))
+    ax.bar(ind, means, width, yerr=stds)
     ax.set_ylabel("Time (Seconds, lower is better)")
     ax.set_xticks(ind)
     ax.set_xticklabels(types)
     ax.set_title(pdat[p]['title'])
-    plt.savefig('%s.pdf' %(p))
+    plt.savefig('figs/%s.pdf' %(p))
     
 

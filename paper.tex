@@ -124,8 +124,10 @@ discuss the implementation, and how we compile OpenMP task constructs to Tapir I
 Section~\ref{Sec:Implementation}. In Section~\ref{Sec:Evaluation} we describe the 
 evaluation setup, including what implementations we compare to and how. We discuss
 the results of evaluation in Section~\ref{Sec:Results}, including possible
-explanations for discrepancies. Finally, we discuss how the many ways the work can
-be extended in Section~\ref{Sec:Future}, and conclude in Section~\ref{Sec:Conclusion}.
+explanations for discrepancies. We discuss the implications of the results ans the
+significance of this work in a large context in~\ref{Sec:Discussion}. Finally,
+we cover some of the many ways the work can be extended in
+Section~\ref{Sec:Future}, and conclude in Section~\ref{Sec:Conclusion}.
 
 \section{Background} \label{Sec:Background}
 
@@ -477,12 +479,14 @@ There are two classes of input sizes for the benchmarks. Some, like Floorplan,
 require input files. For each of these, we chose the largest provided. For the
 benchmarks with a parameter to adjust the size of the input, we attempted to 
 choose a parameter size so that the fastest implementation was on the order of
-seconds. The exact inputs used are:
+seconds. The one exception was for \texttt{Fibonacci}. Because, as discussed
+further below, the Intel implementation required large stacksize, we stopped at
+42. The exact inputs used are:
 
 \begin{itemize}
 \item \texttt{Alignment: -f prot.100.aa} 
 \item \texttt{FFT: -n 335544320}
-\item \texttt{Fibonacci: -n 48}
+\item \texttt{Fibonacci: -n 42}
 \item \texttt{Floorplan: -f input.20}
 \item \texttt{Health: -f large.input}
 \item \texttt{NQueens: -n 15}
@@ -491,15 +495,24 @@ seconds. The exact inputs used are:
 \item \texttt{Strassen: -n 8192}
 \end{itemize}
 
+The Intel compiler required increasing the stacksize for \texttt{Fibonacci} and
+\texttt{FFT}. The implementation seemed to use significantly more stack space
+than the others, requiring setting \texttt{OMP\_STACKSIZE} to \texttt{256M} for
+computing the 42nd Fibonacci number. \texttt{FFT} ran fine with an increase to
+\texttt{16M}.  
+
 For other implementations, we compare to GCC 7.1, Clang 4.0.1, and Intel
-17.0.0. The machine used is a two socket Intel Xeon E5-2693 v3 machine with
-132GB of memory, running Linux 4.11.4. All benchmarks were run using all 64
-hyper-threads. 32 thread tests were done as well and showed qualitatively
-similar results. It's worth noting that each of the other implementations comes
-with it's own runtime. In this sense, performance is a function of both the
-compiler and any optimizations it's able to perform, and the runtime.
-Understanding the interaction of these two parts is non-trivial, as we will see
-when discussing results. 
+17.0.0. The machine used is a two socket Intel Xeon E5-2683 v3 machine with
+132GB of memory, running Linux 4.11.4. Each Xeon has 16 cores running at
+2.1GHz, with 20M of L3 cache. All benchmarks were run using all 64
+hyper-threads. 32 thread tests were run as a sanity check and showed
+qualitatively similar results. It's worth noting that each of the other
+implementations comes with it's own runtime. In this sense, performance is a
+function of both the compiler and any optimizations it's able to perform, and
+the runtime.  Understanding the interaction of these two parts is non-trivial,
+as we will see when discussing results. Each compiler was run with the flags
+\texttt{-O3 -fopenmp}. Our compiler was also run with \texttt{-ftapir} to
+enable Tapir instructions.
 
 As mentioned in the Section~\ref{Sec:Implementation}, the gaps in the implementation
 changed program behaviour in a couple cases. In the case of \texttt{FFT}, we were
@@ -516,27 +529,19 @@ This should be fixable in the implementation by adding a simple code-localized
 synchronization generation in the IR. Similarly, the \texttt{atomic} pragma 
 can be addressed by retaining a pointer to the shared stack variable, much like
 existing OpenMP implementations. It is worth noting that this behaviour was
-non-deterministic, and that roughly half of the time the Floorplan still
-returned correct results. As we will see, this makes for an interesting
+non-deterministic, and that roughly half of the time the \texttt{Floorplan}
+still returned correct results. As we will see, this makes for an interesting
 trade-off given the performance increase witnessed.
 
-In our evaluation, we caught three kinds of errors:
-
-\begin{itemize}
-\item Segmentation faults
-\item Timeouts (10 Minutes)
-\item Non-determinism in result correctness
-\end{itemize}
-
 We set a timeout of 10 minutes, as at least one implementation was always
-finishing within ~10 seconds, anything running more than 60 times slower
-becomes irrelevant. Due to time constraints, correctness checks were not
-performed on every run, so it is possible some non-determinism was missed. 
+finishing within 10 seconds, anything running more than 60 times slower becomes
+irrelevant. Due to time constraints, correctness checks were not performed on
+every run, so it is possible some non-determinism was missed. 
 
 Each variant was run 10 times, with the height of the bars representing the
 mean and the error bars representing standard deviation. In cases where there
 was timeout or segmentation fault, no time is reported, and the run is marked
-as faulty.
+as faulty. 
 
 \section{Results} \label{Sec:Results}
 
@@ -569,63 +574,52 @@ benchmarks, and each bar represents one of the implementations.
 \caption{Barcelona OpenMP Task Suite Results (continued)}
 \end{figure*}
 
-The failure modes enumerated in Section~\ref{Sec:Evaluation} are denoted by 
-asterisks in the implementation labels on the X axis. One asterisk refers to
-some incorrect answers. Two asterisks refers to time-out. Three asterisks
-refers to segmentation faults.
+As mentioned earlier on \texttt{Floorplan} our implementation was sometimes
+giving incorrect results. It is difficult to tell, but the time to completion
+is non-zero. In fact, while ICC and Clang finished in roughly 1-2 seconds, the
+our Tapir implementation was finishing in 0.02 seconds, and computing the
+correct result roughly half the time. This raises interesting questions on the
+cost/benefit relation of the OpenMP behaviour that our implementation is
+missing. We'll discuss this further in Section~\ref{Sec:Discussion}.
 
-First, we can see that there is one failure for our implementation, on
-\texttt{Floorplan}. Note that the result is non-zero. In fact, while ICC and
-Clang finished in roughly 1-2 seconds, the our Tapir implementation was
-finishing in \emph{0.02} seconds, and computing the correct result roughly half
-the time. This raises interesting questions on the cost/benefit relation of the
-OpenMP behaviour that our implementation is missing.
+GCC was the only culprit for timeouts. Recall that the timeout was set at 10
+minutes, so any timeout means GCC was running at least approximately 60 times
+slower than the fastest implementation. For example, on the \texttt{FFT}
+benchmark, while our Tapir implementation was running in under 5 seconds, the
+GCC implementation was timing out at 600 seconds, so was at least 100 times
+slower. We've left GCC results off of the graphs for the three failure cases, 
+\texttt{FFT}, \texttt{Fibonacci}, and \texttt{NQueens}.
 
-Other failures include ICC failing with segmentation faults on \texttt{FFT} and
-\texttt{Fibonacci}. While we haven't carefully diagnosed these failures, we 
-suspect that the number of tasks spawned exceeded a limit in Intel's compiler.
-Note that the \texttt{FFT} failures were non-deterministic, occurring on
-roughly one in three runs. Clang failed with segmentation faults on every run 
-of \texttt{SparseLU}. Again, we didn't have the time to investigate these
-failures, and are unsure what was causing them.
+Putting failures aside, performance for our implementation is quite strong,
+generally outperforming or matching the best of existing implementations. For
+benchmarks where the overhead to work ratio is high is where the Tapir
+implementation really shines. For example, for the \texttt{Fibonacci}
+benchmark, our implementation finishes significantly faster than any of the
+others. While ICC failed for that sized input, we did test with smaller inputs
+and found its similarly outpaced by the Tapir implementation.  \texttt{NQueens}
+and \texttt{FFT} show similar behaviour, to lesser degrees. In contrast,
+benchmarks that have a lower overhead to work ratio unsurprisingly differ less
+in performance. For example,  
 
-The final failures we saw were timeout failures. GCC was the only culprit for these
-failures. Recall that the timeout was set at 10 minutes, so any timeout means GCC 
-was running at least approximately 60 times slower than the fastest implementation. 
-For example, on the \texttt{FFT} benchmark, while our Tapir implementation was running
-in under 5 seconds, the GCC implementation was timing out at 600 seconds, so
-was at least 100 times slower.
+\subsection{Profiling}
 
-Putting failures aside for the moment, performance for our implementation is
-quite strong, generally outperforming or matching the best of existing
-implementations. For benchmarks where the overhead to work ratio is high is 
-where the Tapir implementation really shines. For example, for the
-\texttt{Fibonacci} benchmark, our implementation finishes significantly faster
-than any of the others. While ICC failed for that sized input, we did test with
-smaller inputs and found its similarly outpaced by the Tapir implementation.
-\texttt{NQueens} and \texttt{FFT} show similar behaviour, to lesser degrees. In 
-contrast, benchmarks that have a lower overhead to work ratio unsurprisingly 
-differ less in performance. For example,  
-
-\subsection{Forensics}
-
-In this section we attempt to understand \emph{why} the performance varies in the ways 
-it does. While we can't hope to figure out every discrepancy in performance, we
-can hope to get some ideas for why the performance of our implementation is
-generally better, and where each of the implementations is spending its time.
+In this section we attempt to understand \emph{why} the performance varies in
+the ways it does. While we can't hope to figure out every discrepancy in
+performance, we can hope to get some ideas for why the performance of our
+implementation is generally better, and where each of the implementations is
+spending its time.
 
 Our primary tool for this task will be performance counters. It's worth noting
 that some information is difficult to infer from performance counters, such as
 sources of contention in runtimes, reasons for memory locality issues, etc.
-Still, it will give us some insight into performance bottlenecks in the
-program.
+Still, it will give us some insight into performance bottlenecks.
 
 Before we begin understanding why, it's worth noting again that the scope of the 
 work that this paper is responsible for is only the frontend. All performance
-gains due to the Cilk runtime we sadly cannot claim credit for.
+gains due to the existing Tapir backend and Cilk runtime we sadly cannot claim
+credit for. 
 
-Another import consideration is that we can break reasons for performance
-discrepancies into a few categories: 
+We can break reasons for performance discrepancies into a few categories: 
 
 \begin{itemize}
 \item Front-end code generation
@@ -633,21 +627,150 @@ discrepancies into a few categories:
 \item Runtime efficiency
 \end{itemize}
 
-While we will try out best to distinguish between these in our forensics, it is 
-difficult to do so with only performance counter information. A more thorough
-investigation would require careful knowledge of each of the frontends and
-runtimes. One thing we can guess at is that despite the focus of the paper,
-\emph{IR optimisations are unlikely to be the cause of performance
-improvements}. Our evidence for this comes from Shardl et al. \cite{}. While
-some IR optimisations have been implemented, they seem to have significantly
-more effect on parallel loop code , while the tasking code remains
-relatively unaffected by IR optimizations \cite{}. 
+While we would like to distinguish between these, it is difficult to do so with
+only performance counter information. A more thorough investigation would
+require careful knowledge of each of the frontends and runtimes. One thing we
+can guess at is that despite the focus of the paper, \emph{IR optimisations are
+unlikely to be the cause of performance improvements}. Our evidence for this
+comes from Shardl et al. \cite{}. While some IR optimisations have been
+implemented, they seem to have significantly more effect on parallel loop code,
+while the tasking code remains relatively unaffected by IR optimizations
+\cite{}. 
+
+There are two cases we'd like to look at using the profiler. The first is a 
+case when there is a large difference in runtime between implementations. For 
+this case, our hypothesis is that in these cases the slower implementations
+are, for some reason, spending more time in the runtime. As mentioned above, 
+it is difficult to understand exactly why an implementation is spending more 
+time in the runtime without further investigation, but it is a useful 
+sanity check nonetheless. For this case, we turn to the \texttt{Fib} benchmark.
+Indeed, we get roughly the following breakdowns of work to overhead ratio according
+to the Linux \texttt{perf} tool:
+
+\begin{itemize}
+\item \texttt{tapir: ~30\% runtime overhead, ~50\% work, ~20\% other}
+\item \texttt{clang: ~85\% runtime overhead, ~5\% work, ~10\% other}
+\item \texttt{icc: ~85\% runtime overhead, ~5\% work, ~10\% other}
+\item \texttt{gcc: ~100\% runtime overhead, ~0\% work, ~0\% other}
+\end{itemize}
+
+This confirms our suspicions that most of the slowdown incurred is overhead in
+the runtime. For \texttt{tapir}, the overhead is relatively small given the
+size of the work chunks, for \texttt{clang} and \texttt{icc} it is
+significantly larger, while for \texttt{gcc} it is completely overwhelming.
+This does let us rule out the possibility that somehow the only the codegen for
+other implementations is the culprit: it is almost certainly at least partially
+the runtime implementation.  
+
+For the cases where performance is close between implementations, like
+\texttt{sparselu}, we expect runtimes to be dominated by actual task work. This 
+expectation is confirmed by investigating performance counters for \texttt{sparselu}:
+every implementation spends roughly 90\% of it's time doing work in the task
+bodies. 
 
 \section{Discussion} \label{Sec:Discussion}
 
+In this section we discuss the relevance of the results and this work in general
+in the context of the literature. As discussed in Section~\ref{Sec:Introduction}, 
+there have been many programming models for implementing parallel programs. While
+this paper does not take a stance on which one \emph{should} be used, it does
+accept that OpenMP is currently a widely used model, potentially the most
+widely used model that has a notion of tasks. 
+
+The goal of this work is to show that a single intermediate representation can be
+used to implement multiple programming models, with good performance. Schardl et 
+al. showed that Tapir works well as an IR for Cilk, and surmised that it could
+be an effective IR for a large subset of OpenMP. This work has taken the first
+step in that direction, showing that it can work well as an IR for OpenMP tasks. 
+
+One interesting aspect of this work is that it compiles a language extension intended
+for one runtime (OpenMP runtimes) to use another (the Cilk runtime). While in many
+ways this is a weakness of this work, it does open the possibility of doing this 
+in a general way. Having a real IR to work with enables, in the same way that LLVM
+does for serial code, the possibility of multiple input parallel languages and
+multiple output parallel runtimes. While the OpenMP spec's requirement to
+have access to runtime routines complicates things, for many programming models
+it seems at least conceivable to map them onto multiple different runtimes. This
+opens the possibility of mixing programming models at compile time by targeting
+the same runtime. For example, if both OpenMP and Cilk targeted Tapir
+instructions, one could have a large application where some parts were written
+using Cilk, while other used OpenMP, and the result would not suffer the
+incompatibility problems often seen today. 
+
 \subsection{Future Work} \label{Sec:Future}
 
+One of the important questions for this work is whether or not the Tapir
+instructions can be extended to cover the full OpenMP semantics. As shown
+in this paper, even the full semantics of OpenMP tasks weren't covered. Runtime
+calls aside, implementing the full semantics of OpenMP pragmas would be a 
+significant undertaking.
+
+As two examples, let us consider the problematic \texttt{atomic} and
+\texttt{critical} pragmas from the \texttt{Floorplan} benchmark. The 
+\texttt{atomic} pragma would likely not be too difficult to translate
+from existing OpenMP codegen. One would have to simply keep around and then
+modify the contents of the original stack pointer to the shared variable. The
+\texttt{critical} section would likely be a little more difficult. Still, it
+should be possible to modify existing OpenMP code to block on that section. 
+
+Still, whether or not it's \emph{possible} to implement these extra features
+is a separate question from whether or not it's \emph{useful}. If implementing
+extra features require using special synchronization primitives, or calls into
+runtimes, or any other tool other than the Tapir instructions, then the
+compiler cannot reason about code using those features, and many of the
+advantages we've discussed become moot, e.g. backend compatibility, generic 
+optimization, etc. Features like the OpenMP \texttt{atomic} pragma don't 
+require any changes to control flow, and therefore are likely to work well 
+with Tapir analyses and optimizations. On the other hand features like OpenMP's
+\texttt{critical} section \emph{do} require changes to control flow that seem
+challenging at best to map onto Tapir's instructions. Furthermore, even if it
+is possible to implement features using the Tapir instructions, it may require 
+such radical entangling of the code that even if analysis is technically
+possible, it becomes infeasible. 
+
 \subsection{Related Work} \label{Sec:Related}
+
+There has been significant work on internal representations for parallel
+programs. These can be roughly broken into four categories. 
+
+First, compilers can attach metadata to an existing IR. For example, LLVM has a
+parallel loop metadata construct \cite{}. This has the benefit of being
+flexible and requiring minimal work, but historically can be lost during
+optimizations, and any code movement can break the semantics. The flexibility
+of this approach can also be viewed as a negative, as it can compromise
+what can otherwise be a simple, well defined semantics for the IR. 
+
+A second approach is to use intrinsic functions to define parallel tasks
+\cite{ares}. This, like the metadata approach, has the advantage of being
+flexible and relatively easy to implement, but at the cost of being less well
+defined. There has recently been proposals to standardize intrinsics extensions
+for LLVM to represent parallelism, but we would caution that a large, flexible
+set of intrinsics being added to an already only-partially defined
+\cite{verillvm} language could make reasoning about parallel programs, even
+in an IR settings, infeasible. 
+
+A third approach is to have a separate instruction set for parallelism. This is
+the approach taken by projects like HPIR \cite{}, SPIRE \cite{}, and INSPIRE
+\cite{}. This approach has the downside of being unable to re-use existing
+optimization and analysis infrastructure of an existing IR. 
+
+Finally, the last approach, and that taken by Tapir, is to implement parallel 
+instructions as an extension of an existing IR. This allows for integration
+into existing analyses and optimizations. In the case of Tapir, this allows one
+to leverage years of development into program analysis and optimization,
+extending only where necessary. 
+
+While there is general agreement that there needs to be IR support for
+parallelism in parallel programs, there isn't consensus on which of these
+approaches is best. Approaches that are easier at first, such as metadata
+or intrinsic approaches, are similarly easy to extend to be unwieldy. There is
+a reason that it's difficult to add instructions to LLVM: any added IR
+construct needs to be considered in many locations. From debugging by printing
+out IR, to case analysis for different control flow constructs, having 
+a proper set of instructions to denote parallelism has a lot of advantages. 
+Additionally, any hope of having a formal semantics for an IR depends on a 
+simple, concise set of parallelism constructs, something that metadata and
+intrinsics approaches can easily avoid. 
 
 \section{Conclusion} \label{Sec:Conclusion}
 We have shown that Tapir is an excellent IR target for OpenMP tasks. While not
