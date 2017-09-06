@@ -1,4 +1,5 @@
 \documentclass[sigconf]{acmart}
+\newcommand{\wmnote}[1]{{\scriptsize \color{red} [[ Billy: #1]]}}
 
 \usepackage{booktabs} % For formal tables
 \usepackage{multicol}
@@ -79,7 +80,7 @@ significant challenge for compiler writers, which must choose a single model to
 analyze and optimize. An ideal solution would be some some form of common
 representation of parallelism that all IRs can share.
 
-Internal representations (IRs) are the compiler objects on which almost all
+Internal representations (IRs) are the \wmnote{the phrase compiler objects seems a bit odd to me}compiler objects on which almost all
 analyses and optimizations are performed. Historically, a major drawback for
 parallel codes is that IRs don't have the ability to represent, and therefore
 reason about, parallelism. This prevents the application of common
@@ -136,7 +137,7 @@ code in a generic, hardware-agnostic format, they allow both multiple frontends 
 different source languages, and multiple backends for different hardware, to all
 take advantage of a series of compiler optimizations and analyses. 
 
-LLVM is arguably the most successful IR to date \cite{llvm}. By implementing a simple
+\wmnote{This feels like we're trying to convince someone about LLVM: perhaps LLVM has gained traction in the academic community for both its simplicity and relatively painless modification}LLVM is arguably the most successful IR to date \cite{llvm}. By implementing a simple
 single static assignment (SSA) representation, it enables powerful optimizations 
 that are effective for a wide range of programming languages and hardware
 \cite{llvm imps}. 
@@ -166,10 +167,10 @@ and analyses can be applied across a wide range of programming languages and
 hardware, but until there was an effective IR, those were often duplicated, 
 resulting in a lot of lost opportunity. 
 
-Addressing these concerns this is a major motivation for our turning to Tapir.
-By standardising a powerful but simple internal representation and building
-frontends and backends for it, one both make it easier to build optimizations
-and analyses for a given programming model, and avoid duplicating that work
+Addressing these concerns this is a major motivation for our \wmnote{use of?}turning to Tapir.
+\wmnote{this sentence feels very loose/run-on} By standardising a powerful but simple internal representation and building
+frontends and backends for it, one both makes it easier to build optimizations
+and analyses for a given programming model, and avoids duplicating work
 across different implementations. We'll return to this issue later in the paper
 when discussing potential limitations and challenges for Tapir for other
 hardware and 
@@ -297,7 +298,7 @@ the performance of this work marginally, due to reducing the number of memory
 copies for variables declared \texttt{private} in OpenMP code. 
 
 The surprising fact that program behaviour wasn't changed significantly is
-worth visiting here. We surmise that it is likely due to the variable semantics
+worth \wmnote{discussion?}visiting here. We surmise that it is likely due to the variable semantics
 borrowed from the Cilk codegen and their relation to the OpenMP specification
 of semantics.  In particular, \emph{OpenMP doesn't specify any memory model for
 shared variables}. This results in the Cilk style of only writing to a shared
