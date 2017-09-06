@@ -1,5 +1,6 @@
 \documentclass[sigconf]{acmart}
 \newcommand{\wmnote}[1]{{\scriptsize \color{red} [[ Billy: #1]]}}
+\newcommand{\gsnote}[1]{{\scriptsize \color{blue} [[ George: #1]]}}
 
 \usepackage{booktabs} % For formal tables
 \usepackage{multicol}
@@ -84,16 +85,15 @@ significant challenge for compiler writers, which must choose a single model to
 analyze and optimize. An ideal solution would be some some form of common
 representation of parallelism that all IRs can share.
 
-Internal representations (IRs) are the \wmnote{the phrase compiler objects seems a bit odd to me}compiler objects on which almost all
-analyses and optimizations are performed. Historically, a major drawback for
-parallel codes is that IRs don't have the ability to represent, and therefore
-reason about, parallelism. This prevents the application of common
-optimizations to concurrent code. The recent work of Schardl et al.
-\cite{shardl2017} has shown that real world compiler IRs can be extended to
-represent fork-join parallelism. By extending the LLVM instruction set with
-three instructions, they were able to capture all of the semantics to implement
-the semantics of Cilk, an extension to C. They suggested that a similar
-approach could be taken with OpenMP tasks.
+Compilers use internal representations (IRs) for implementing analyses and
+optimizations. Historically, a major drawback for parallel programs is that IRs
+don't have the ability to represent, and therefore reason about, parallelism.
+This prevents the application of common optimizations to concurrent code. The
+recent work of Schardl et al.  \cite{shardl2017} has shown that real world
+compiler IRs can be extended to represent fork-join parallelism. By extending
+the LLVM instruction set with three instructions, they were able to capture all
+of the semantics to implement the semantics of Cilk, an extension to C. They
+suggested that a similar approach could be taken with OpenMP tasks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This enables us to target non-openmp
@@ -136,48 +136,62 @@ Section~\ref{Sec:Future}, and conclude in Section~\ref{Sec:Conclusion}.
 
 \section{Background} \label{Sec:Background}
 
-Internal representations are a crucial part of modern compilers. By representing
-code in a generic, hardware-agnostic format, they allow both multiple frontends for
-different source languages, and multiple backends for different hardware, to all
-take advantage of a series of compiler optimizations and analyses. 
+\textbf{Internal representations (IRs)} are a crucial part of modern compilers.
+By representing code in a generic, hardware-agnostic format, they allow both
+multiple frontends for different source languages, and multiple backends for
+different hardware, to all take advantage of a series of compiler optimizations
+and analyses. 
 
-\wmnote{This feels like we're trying to convince someone about LLVM: perhaps LLVM has gained traction in the academic community for both its simplicity and relatively painless modification}LLVM is arguably the most successful IR to date \cite{llvm}. By implementing a simple
-single static assignment (SSA) representation, it enables powerful optimizations 
-that are effective for a wide range of programming languages and hardware
-\cite{llvm imps}. 
+\wmnote{This feels like we're trying to convince someone about LLVM: perhaps
+LLVM has gained traction in the academic community for both its simplicity and
+relatively painless modification} 
+\gsnote{I wanted to give a brief nod to the importance of LLVM, given the venue
+(LLVM in HPC). Is this any more satisfactory?} 
+Among IRs, LLVM is arguably the most ubiquitous \cite{llvm}. Winner of the
+2012 ACM Software System Award, it is in use by frontends ranging from Haskell
+to C++, and backends ranging from x86 to PTX \cite{}. Implementing a simple,
+extensible \textbf{single static assignment (SSA)} IR, LLVM enables powerful
+optimizations that are effective for a wide range of programming languages and
+hardware \cite{llvm}. 
 
-Historically, LLVM has had a sequential semantics: there is no notion of
-concurrent or parallel processes. This resulted in existing compilers treating 
-parallelism constructs as thin wrappers for calls into runtime systems. These
-calls are essentially impossible for the compiler to reason about, due to the
-complexity of runtimes being called. 
+Historically, LLVM has had a sequential semantics: there is no explicit notion
+of concurrent or parallel processes. This has resulted in existing compilers
+treating parallelism constructs as thin wrappers for calls into runtime
+systems. These calls are infeasible for the compiler to reason about, due to
+the complexity and flexibility of runtimes being called. This situation was
+recently remedied by Schardl et al.  \cite{tapir}. By adding three instructions
+to LLVM, Tapir enables analyses and optimizations of parallel code. We describe
+Tapir in detail in Section~\ref{Sec:Tapir}. For a more complete description see
+\cite{tapir}. 
 
-This unfortunate situation was recently remedied by Schardl et al.
-\cite{tapir}. By adding three instructions to LLVM, Tapir enables analyses and
-optimizations of parallel code. A full description 
+Arguably the most ubiquitous parallel programming model for on-node parallelism
+in HPC, OpenMP has grown from being a way to implement parallel for loops to an
+enormous and complex specification for parallelism. This paper focuses on a 
+relatively recent addition to the OpenMP specification: the \texttt{task}
+and \texttt{taskwait} constructs. A detailed description of these constructs
+is presented in Section~\ref{Sec:OpenMP}. For a more complete description see
+\cite{spec}.
 
 \subsection{Fragmentation}
 
 In this section we discuss a significant challenge in HPC: fragmentation of
 parallel programming models. There are many, many, many ways to write
 parallel programs \cite{....}. From libraries, to language extensions, to
-standalone languages, to combinations of the above, it can be hard to choose
-the right one. This means that when writing tooling, optimizations, or
-analyses, one has to choose which model to target. One common difficulty among
-all of these is that reasoning about parallel programs is hard \cite{}, and
-compilers can help \cite{}. Therefore any duplicated work is extremely costly.
-This is exactly analogous the problem LLVM helps to solve. Many optimizations
-and analyses can be applied across a wide range of programming languages and 
-hardware, but until there was an effective IR, those were often duplicated, 
-resulting in a lot of lost opportunity. 
+standalone languages, to combinations of the above, fragmentation of parallel
+programming models is a problem that is only getting worse. This means that
+when writing tooling, optimizations, or analyses, one has to choose which model
+to target. One common difficulty among all of these is that reasoning about
+parallel programs is hard \cite{}, and compilers can help \cite{}. Therefore
+any duplicated work is extremely costly.  This is exactly analogous the problem
+LLVM helps to solve.  Many optimizations and analyses can be applied across a
+wide range of programming languages and hardware, but until there was an
+effective IR, those were often duplicated, resulting in a lot of lost
+opportunity. 
 
-Addressing these concerns this is a major motivation for our \wmnote{use of?}turning to Tapir.
-\wmnote{this sentence feels very loose/run-on} By standardising a powerful but simple internal representation and building
-frontends and backends for it, one both makes it easier to build optimizations
-and analyses for a given programming model, and avoids duplicating work
-across different implementations. We'll return to this issue later in the paper
-when discussing potential limitations and challenges for Tapir for other
-hardware and 
+Addressing these concerns this is a major motivation for our use of Tapir.
+By standardising an IR, in addition to easing the development of optimizations,
+one avoids duplicating work across different implementations. We'll return to
+this issue later in Section~\ref{Sec:Future} when discussing future work.
 
 \section{Tapir} \label{Sec:Tapir}
 Tapir is an extension to LLVM proposed by Schardl, Moses, and Leiserson
@@ -198,6 +212,10 @@ Specifically, Tapir introduces the \texttt{detach}, \texttt{reattach}, and
 about these instructions on a broad level as a target for parallel tasks, or
 more concretely define what they do. However, we don't seem discuss CFG's
 before this so I'm not sure what level of introduction you're thinking of.}
+\gsnote{I was thinking roughly a page should be enough. Maybe a summary of what
+Tapir is followed by an example of an optimization it enables. I like both the
+CSE and tail-call optimization examples from your PPoPP paper. Feel free to 
+define CFG and any other terms you need to.}
 
 \section{OpenMP Tasks} \label{Sec:OpenMP}
 
@@ -295,11 +313,11 @@ on the thread where it is generated).
 
 Tapir is implemented as an extension to the LLVM instruction set. Clang is a
 C family compiler that has support for OpenMP extensions \cite{clang} and targets
-LLVM. The existing Clang OpenMP implementation mapps OpenMP constructs directly
+LLVM. The existing Clang OpenMP implementation maps OpenMP constructs directly
 to OpenMP runtime library calls, by wrapping a C statement in a
-\texttt{CapturedStmt}.  This replaces a C statement with a function call into
-the OpenMP runtime library. along with a machine generated function who's body
-contains that statement. 
+\texttt{CapturedStmt}. This replaces a C statement with a function call into
+the OpenMP runtime library, along with a machine generated function who's body
+contains that statement.   
 
 For this work, we replaced a subset of the OpenMP implementation to generate
 Tapir IR instead of vanilla LLVM IR with OpenMP runtime calls. Specifically, we
@@ -317,52 +335,40 @@ will change of variable semantics, e.g. \texttt{shared} vs. \texttt{private}.
 Surprisingly, this had little effect on the correctness of the entire Barcelona
 OpenMP task suite. Indeed, it is likely that fixing this issue would increase
 the performance of this work marginally, due to reducing the number of memory
-copies for variables declared \texttt{private} in OpenMP code. 
+copies for variables declared \texttt{private} in OpenMP code. This property
+that behaviour wasn't changed significantly is worth revisiting, and we do so
+in Section~\ref{Sec:Discussion}. 
 
-The surprising fact that program behaviour wasn't changed significantly is
-worth \wmnote{discussion?}visiting here. We surmise that it is likely due to the variable semantics
-borrowed from the Cilk codegen and their relation to the OpenMP specification
-of semantics.  In particular, \emph{OpenMP doesn't specify any memory model for
-shared variables}. This results in the Cilk style of only writing to a shared
-variable at the end of a parallel section as a perfectly valid implementation
-of OpenMP's specification. In contrast, existing OpenMP implementations often
-write to shared variables on every write. This is a potential for performance
-discrepancy due to differing implementation-defined behaviour, and we will 
-return to it when discussing performance on the Barcelona OpenMP task suite.
-There is of course the fact that technically, by copying the value of variables
-back to the surrounding context even for \texttt{private} variables, one isn't
-following the specification. We surmise that in practice this hasn't had an
-effect due to the fact that \texttt{private} variables are generally used for
-performance, rather than their semantic properties. 
-
-A very important property to discuss of the current implementation is the
+A very important property of the current implementation to discuss is the
 backend. This work has \emph{only been on the frontend}, which means we use
-the only existing backend for Tapir. The existing backend is to generate 
-calls into the Cilk runtime, \texttt{libcilkrts}. This obviously has many 
-implications for adhering to the OpenMP specification. For example, environment
-variables such as \texttt{OMP\_NUM\_THREADS} are ignored, replaced by
-\texttt{CILK\_NWORKERS}. We discuss some of these issues below, and return to 
-address others in the future work section. 
+the only existing backend for Tapir. The existing backend generates calls into
+the Cilk runtime, \texttt{libcilkrts}. This obviously has many implications for
+adhering to the OpenMP specification. For example, environment variables such
+as \texttt{OMP\_NUM\_THREADS} are ignored, replaced by \texttt{CILK\_NWORKERS}.
+We discuss some of these issues below, and return to address others in the
+future work section. 
 
 There are other issues that had to be overcome to run full OpenMP programs
-using Tapir as described above. Generally, a program has to contain other
-OpenMP pragmas in order to run parallel code. A standard pattern for building
-task-parallel OpenMP programs is to start a \texttt{parallel} pragma to spin up
-the necessary hardware threads, then have a \texttt{single} pragma to have only
-one thread continue on the specified statement. Then the other threads will get
-work from spawned tasks, instead of implicitly executing the same code in a
-data parallel style. For the purpose of this paper, we took the shortcut of
-replacing these pragmas with no-ops. This worked well for all examples except
-for one, in which after the \texttt{parallel} and \texttt{single} pragmas the
-top level task was called with an unnecessary \texttt{task} pragma. Because the
-wait was implicit and unhandled by our implementation, the simple fix was to
-remove the \texttt{task} pragma. This was the only change required to the 
-source code. Our temporary no-op shortcut, of course, doesn't follow the OpenMP
-specification, and should be addressed by future work. 
+using Tapir as described above. Generally, in addition the the \texttt{task} 
+and \texttt{taskwait} pragmas, a program has to contain initialization OpenMP
+pragmas in order to run parallel code. A standard pattern for building
+task-parallel OpenMP programs is to insert a \texttt{parallel} pragma to start
+the necessary hardware threads, followed immediately by a \texttt{single}
+pragma to have only one thread continue on the specified statement. Then the
+other threads will get work from spawned tasks, instead of implicitly executing
+the same code in a data parallel style. For the purpose of this paper, we took
+the shortcut of replacing these pragmas with no-ops. This worked well for all
+examples except for one, in which after the \texttt{parallel} and
+\texttt{single} pragmas the top level task was called with an unnecessary
+\texttt{task} pragma.  Because the wait was implicit and unhandled by our
+implementation, the simple fix was to remove the \texttt{task} pragma. This was
+the only change required to the source code. Our temporary no-op shortcut, of
+course, doesn't follow the OpenMP specification, and should be addressed by
+future work. 
 
 All code used for the implementation is available at \\
-\texttt{https://github.com/lanl/openmpir}. The version used for this paper is
-tagged as LLVM17.
+\texttt{https://github.com/lanl/openmpir-clang}. The version used for this
+paper is tagged as LLVM17.
 
 \subsection{Example} \label{Sec:Example}
 
@@ -719,6 +725,23 @@ the same runtime. For example, if both OpenMP and Cilk targeted Tapir
 instructions, one could have a large application where some parts were written
 using Cilk, while other used OpenMP, and the result would not suffer the
 incompatibility problems often seen today. 
+
+The surprising fact that program behaviour wasn't changed significantly is
+worth discussing here. We surmise that it is likely due to the variable
+semantics borrowed from the Cilk codegen and their relation to the OpenMP
+specification of semantics. In particular, \emph{OpenMP doesn't specify any
+memory model for shared variables}. This results in the Cilk style of only
+writing to a shared variable at the end of a parallel section as a perfectly
+valid implementation of OpenMP's specification. In contrast, existing OpenMP
+implementations often write to shared variables on every write. This is a
+potential for performance discrepancy due to differing implementation-defined
+behaviour, and we will return to it when discussing performance on the
+Barcelona OpenMP task suite. There is of course the fact that technically, by
+copying the value of variables back to the surrounding context even for
+\texttt{private} variables, one isn't following the specification. We surmise
+that in practice this hasn't had an effect due to the fact that
+\texttt{private} variables are generally used for performance, rather than
+their semantic properties. 
 
 \subsection{Future Work} \label{Sec:Future}
 
