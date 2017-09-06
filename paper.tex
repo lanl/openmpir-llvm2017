@@ -74,21 +74,21 @@ Qthreads, pthreads, MPI, Chapel, UPC, etc. have virtually no ability to
 interoperate, both at compile time and run time. In addition, many of these
 programming models are implemented as libraries, and therefore have no compiler
 support. There has been some recent work on specializing compilers to reason
-about libraries \cite{kokkos}, but the fragmentation among the models that
-presents another challenge for compiler writers, which must choose a single
-model to analyze and optimize. An ideal solution would be some some form of
-common representation of parallelism that all IRs can share.
+about libraries \cite{kokkos}, but fragmentation among models presents a
+significant challenge for compiler writers, which must choose a single model to
+analyze and optimize. An ideal solution would be some some form of common
+representation of parallelism that all IRs can share.
 
 Internal representations (IRs) are the compiler objects on which almost all
 analyses and optimizations are performed. Historically, a major drawback for
 parallel codes is that IRs don't have the ability to represent, and therefore
 reason about, parallelism. This prevents the application of common
 optimizations to concurrent code. The recent work of Schardl et al.
-\cite{shardl2017} has shown that standard compiler IRs can be extended to
-represent fork-join parallelism. In that work, by extending the LLVM
-instruction set with three instructions, they are able to capture all of the
-semantics to implement the semantics of Cilk, an extension to C. They suggested
-that a similar approach could be taken with OpenMP tasks.
+\cite{shardl2017} has shown that real world compiler IRs can be extended to
+represent fork-join parallelism. By extending the LLVM instruction set with
+three instructions, they were able to capture all of the semantics to implement
+the semantics of Cilk, an extension to C. They suggested that a similar
+approach could be taken with OpenMP tasks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This enables us to target non-openmp
