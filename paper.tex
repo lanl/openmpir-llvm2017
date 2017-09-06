@@ -55,10 +55,14 @@
 \affiliation{\institution{Los Alamos National Laboratory}}
 \email{pat@lanl.gov}
 
+\author{William S. Moses}
+\affiliation{\institution{MIT CSAIL}}
+\email{wmoses@mit.edu}
+
 \begin{abstract}
 Optimizing compilers for task-level parallelism are still in their infancy.
 This work implements a frontend which compiles a subset of OpenMP tasks to
-Tapir IR. This enables analyses and optimizations previously inaccessible to
+Tapir. This enables analyses and optimizations previously inaccessible to
 OpenMP codes. Initial performance results for the Barcelona OpenMP tasking
 suite and show performance improvements over existing OpenMP compiler
 implementations. 
@@ -176,6 +180,24 @@ when discussing potential limitations and challenges for Tapir for other
 hardware and 
 
 \section{Tapir} \label{Sec:Tapir}
+Tapir is an extension to LLVM proposed by Schardl, Moses, and Leiserson
+aiming to resolve issues regarding optimizing parallel code. Prior to
+the introduction of Tapir, compilers would represent parallel programs
+by directly translating their syntax to opaque runtime calls. This allowed
+for compilers to support parallel programs, but meant that traditional 
+optimizations such as code motion \cite{} or common-subexpression elimination \cite{}
+weren't able to reason about parallel programs. This often led to parallel
+programs running significantly slower than expected. In the Tapir project,
+the authors show that it is possible to represent and optimize fork-join
+parallel programs with relatively minimal modifications to the compiler: namely
+the introduction of three instructions designed to interface well with an
+existing compiler.
+
+Specifically, Tapir introduces the \texttt{detach}, \texttt{reattach}, and
+\texttt{sync} instructions. \wmnote{How in detail should I go here? I can talk
+about these instructions on a broad level as a target for parallel tasks, or
+more concretely define what they do. However, we don't seem discuss CFG's
+before this so I'm not sure what level of introduction you're thinking of.}
 
 \section{OpenMP Tasks} \label{Sec:OpenMP}
 
