@@ -935,7 +935,8 @@ on one core, is a lot more impactful on multicores because of issues regarding c
 forcing a cache line flush.
 Also I'm not convinced there wasn't an impact on FFT/nqueens because we did see a
 decent improvement from tapir on that -- though I wouldn't be suprised to see the runtime
-contribute a large chunk of that.
+contribute a large chunk of that, especially for nqueens because that seems like a much
+larger improvement than the serial optimizations applied to parallel program alone (when we tested).
 Fibonacci is certainly runtime based because there's basically no work inside of
 it so its almost entirely a measurement of the runtime efficiency.
 Sort I'm not sure on depending on the implementation
