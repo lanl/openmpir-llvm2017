@@ -107,17 +107,18 @@ support. There has been some recent work on specializing compilers to reason
 about parallel programming libraries \cite{Moss_2016}, but fragmentation among
 models presents a significant challenge for compiler writers, which must choose
 a single model to analyze and optimize. An ideal solution would be some form of
-common representation of parallelism in an internal representation \textbf{(IR)}.
+common representation of parallelism.
 
-Compilers use internal representations (IRs) for implementing analyses and
-optimizations. Historically, a major drawback for parallel programs is that IRs
-haven't had the ability to represent, and therefore reason about, parallelism.
-This has prevented the application of common optimizations to concurrent code.
-The recent work of Schardl et al. \cite{tapir} has shown that real world
-compiler IRs can be extended to represent fork-join parallelism. By extending
-the LLVM instruction set with three instructions, they were able to capture all
-of the semantics to implement the semantics of Cilk, an extension to C. They
-suggested that a similar approach could be taken with OpenMP tasks.
+Compilers use internal representations \textbf{(IRs)} for implementing the
+majority of their analyses and optimizations \cite{llvm}. Historically, a major
+drawback for parallel programs is that IRs haven't had the ability to
+represent, and therefore reason about, parallelism.  This has prevented the
+application of common optimizations to concurrent code.  The recent work of
+Schardl et al. \cite{tapir} has shown that real world compiler IRs can be
+extended to represent fork-join parallelism. By extending the LLVM instruction
+set with three instructions, they were able to capture all of the semantics to
+implement the semantics of Cilk, an extension to C. They suggested that a
+similar approach could be taken with OpenMP tasks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This enables us to target non-openmp
