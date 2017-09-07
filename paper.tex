@@ -22,6 +22,61 @@
 \newcommand{\subfigref}[2]      {Figure~\ref{fig:#1}#2}
 \newcommand{\subfigreftwo}[3]      {Figures~\ref{fig:#1}#2 and~\ref{fig:#1}#3}
 
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing,shapes,arrows,positioning,calc}
+
+\tikzset{
+  basic block/.style={
+    rectangle,
+    rounded corners,
+    draw=black, thin,
+    % minimum width=3.2cm,
+    inner sep=3pt,
+    % outer sep=4pt,
+    align=left,
+    anchor=west,
+    fill=codebgcolor, 
+    % font={\ttfamily\fontsize{8.5}{10.2}\selectfont},
+    font={\ttfamily\fontsize{7.5}{9}\selectfont},
+    text=terminalcolor,
+    draw=codeheadcolor,
+    thick,
+    auto,
+    node distance=.4cm and 1.25cm,
+  },
+  cfedge/.style={
+    font=\itshape,
+    draw=black,
+    ->,
+    >=stealth'
+  },
+  process/.style={
+    draw,
+    fill=orange!50,
+    rectangle,
+    minimum height=1.5em,
+    minimum width=5em,
+    align=center,
+    font=\small,
+  },
+  form/.style={
+    draw,
+    fill=blue!30,
+    ellipse,
+    minimum height=1em,
+    align=center,
+    font=\footnotesize,
+  },
+  slave/.style={
+    execute at end picture={
+      \coordinate (lower right) at (current bounding box.south east);
+      \coordinate (upper left) at (current bounding box.north west);
+      \pgfresetboundingbox
+      \path (upper left) rectangle (lower right);
+    }
+  }
+}
+
 \definecolor{CodeColor}{RGB}{98,39,26}
 \def\code{\lstinline[basicstyle=\ttfamily\color{CodeColor}]} 
 
@@ -96,35 +151,48 @@ OpenMP compiler implementations.
 \maketitle
 
 \section{Introduction} \label{Sec:Introduction}
-
+ 
 When writing task-parallel programs today, one has a large selection of
 programming models. Unfortunately, despite having significant overlap in
-semantics, parallel programming models like OpenMP, Cilk, Kokkos, HPX, Charm++,
-Qthreads, pthreads, MPI, Chapel, UPC, etc. have virtually no ability to
-interoperate, both at compile time and run time. In addition, many of these
-programming models are implemented as libraries, and therefore have no compiler
-support. There has been some recent work on specializing compilers to reason
+semantics, parallel programming models such as OpenMP\cite{}, Cilk\cite{},
+Kokkos\cite{}, HPX\cite{}, Charm++\cite{},
+Qthreads\cite{}, pthreads\cite{}, MPI\cite{}, Chapel\cite{}, UPC\cite{},
+among others have virtually no ability to interoperate either at compile
+time or run time.
+\wmnote{Not sure if relevant, but there was some experiment run a while back of someone composing a library that internally used OpenMP
+with another framework that had terribly results compared with either used alone.}
+Many of these programming models are implemented as runtime libraries with only
+primitive compiler support. As a result, most of these parallel frameworks
+aren't able to take advantage of the compiler's analysis and optimizations.
+There has been some recent work on specializing compilers to reason
 about parallel programming libraries \cite{Moss_2016}, but fragmentation among
 models presents a significant challenge for compiler writers, which must choose
 a single model to analyze and optimize. An ideal solution would be some form of
 common representation of parallelism.
 
-Compilers use internal representations \textbf{(IRs)} for implementing the
-majority of their analyses and optimizations \cite{llvm}. Historically, a major
-drawback for parallel programs is that IRs haven't had the ability to
-represent, and therefore reason about, parallelism.  This has prevented the
-application of common optimizations to concurrent code.  The recent work of
+Compilers implement the majority of their analyses and optimizations on
+intermediate representations \textbf{(IRs)} which allow such transformations
+to be written once with relative ease and apply to a variety of source languages
+such as C or C++.
+Historically, the IR of mainstream compilers such as LLVM\cite{llvm} or GCC's Gimple\cite{}
+haven't suppored parallel programs. As a consequence, compilers relying on these
+IRs haven't had the ability to
+represent, and therefore reason about, parallelism. The recent work of
 Schardl et al. \cite{tapir} has shown that real world compiler IRs can be
-extended to represent fork-join parallelism. By extending the LLVM instruction
-set with three instructions, they were able to capture all of the semantics to
-implement the semantics of Cilk, an extension to C. They suggested that a
-similar approach could be taken with OpenMP tasks.
+extended to represent fork-join parallelism without requiring a major rewrite.
+They do so by extending the LLVM instruction set with three instructions
+capable of representing fork-join parallelism. To benchmark performance and test
+accuracy, they wrote a frontend which translated programs written with Cilk, a parallel
+programming model for C/C++, into Tapir. They also wrote a backend to \textbf{lower}
+take Tapir programs to vanilla LLVM with Cilk runtime calls.
+They suggested that a similar approach could be taken with OpenMP and other
+such frameworks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
-compiling them to Tapir instructions. This enables us to target non-openmp
-runtimes and compare performance to existing OpenMP implementations. For this
-paper, our prototype implementation uses a Cilk runtime as a backend, and we run
-our prototype implementation on the Barcelona OpenMP task suite
+compiling them to Tapir instructions. This allows us to both analyze and optimize
+OpenMP programs as well as compile programs written in OpenMP to use other runtimes.
+For this paper, our prototype implementation uses a Cilk runtime as a backend,
+and we run our prototype implementation on the Barcelona OpenMP task suite
 \cite{barcelona}. We discuss the kinds of optimizations this enables, and how
 the work could be extended to include other parallelism constructs and semantics
 in OpenMP. We also discuss the possibility of extending this work to other
@@ -168,24 +236,18 @@ multiple frontends for different source languages, and multiple backends for
 different hardware, to all take advantage of a series of compiler optimizations
 and analyses. 
 
-\wmnote{This feels like we're trying to convince someone about LLVM: perhaps
-LLVM has gained traction in the academic community for both its simplicity and
-relatively painless modification} 
 \gsnote{I wanted to give a brief nod to the importance of LLVM, given the venue
-(LLVM in HPC). Is this any more satisfactory?} 
-Among IRs, LLVM is arguably the most ubiquitous \cite{lattner2004llvm}. Winner
-of the 2012 ACM Software System Award, it is in use by frontends ranging from
-Haskell to C++, and backends ranging from x86 to PTX \cite{lattner2004llvm}.
-Implementing a simple, extensible single static assignment IR, LLVM enables
-powerful optimizations that are effective for a wide range of programming
-languages and hardware \cite{lattner2004llvm}. 
-
+(LLVM in HPC). Is this any more satisfactory?}
+\wmnote{It still feels like we're trying to advocate for LLVM. I'd prefer some
+more objective-sounding language like perhaps the one below.}
+LLVM has gained traction in the academic community for its simplicity,
+relatively painless modification, and extensibility\cite{lattner2004llvm}.
 Historically, LLVM has had a sequential semantics: there is no explicit notion
 of concurrent or parallel processes. This has resulted in existing compilers
 treating parallelism constructs as thin wrappers for calls into runtime
 systems. These calls are infeasible for the compiler to reason about, due to
 the complexity and flexibility of runtimes being called. This situation was
-recently remedied by Schardl et al.  \cite{tapir}. By adding three instructions
+recently remedied by Schardl et al. \cite{tapir}. By adding three instructions
 to LLVM, Tapir enables analyses and optimizations of parallel code. We describe
 Tapir in detail in Section~\ref{Sec:Tapir}. For a more complete description see
 \cite{tapir}. 
@@ -243,7 +305,6 @@ existing compiler.
 
 \subsection{Compilation without Tapir}
 
-\setminted{fontsize=\small,baselinestretch=1}
 \begin{figure}[t]
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}l@{}l}
 
@@ -339,22 +400,70 @@ void search(int low, int high) {
 \subsection{Tapir Internals}
 Tapir is a compelling solution to this problem because it allows existing
 analysis and optimizations to work on parallel programs without much modification.
-Tapir does this by extending LLVM's instruction set to natively represent
-fork-join parallel programs in a way that 
+To properly describe Tapir, one must briefly introduce key aspects of LLVM.
+LLVM represents control flow through a control-flow graph (CFG) of blocks,
+which are sequences of instructions. Blocks always end with terminator instructions
+which define the edges of the control flow graph. For example, \figref{CFG} shows a simple
+function and its corresponding LLVM code.
 
-... TODO ...
+\begin{figure*}[h!]
+  \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ll}
 
+    \subfiglabel{a} & \subfiglabel{b} \\
+\begin{minipage}[T]{0.45\linewidth}
+      \begin{lstlisting}
+int f(int x) {
+  int y = 10;
+  if (x == 0) {
+    y = 12;
+  }
+  return y;
+}
+      \end{lstlisting}
+    \end{minipage}
+&
+    \begin{minipage}[T]{0.45\linewidth}
+\begin{lstlisting}[language=llvm]
+define i32 @f(i32 %x) {
+entry:
+  %y = alloca i32, align 4
+  store i32 10, i32* %y, align 4
+  %cmp = icmp eq i32 %x, 0
+  br i1 %cmp, label %if.then, label %if.end
 
-Specifically, Tapir introduces the \texttt{detach}, \texttt{reattach}, and
-\texttt{sync} instructions. \wmnote{How in detail should I go here? I can talk
-about these instructions on a broad level as a target for parallel tasks, or
-more concretely define what they do. However, we don't seem discuss CFG's
-before this so I'm not sure what level of introduction you're thinking of.}
-\gsnote{I was thinking roughly a page should be enough. Maybe a summary of what
-Tapir is followed by an example of an optimization it enables. I like both the
-CSE and tail-call optimization examples from your PPoPP paper. Feel free to 
-define CFG and any other terms you need to. If that's too much to ask on such 
-short notice just let me know and I'll help out.}
+if.then:
+  store i32 12, i32* %y, align 4
+  br label %if.end
+
+if.end:
+  %1 = load i32, i32* %y, align 4
+  ret i32 %1
+}
+\end{lstlisting}
+    \end{minipage}\\
+    \addlinespace[2ex]
+    \bottomrule
+  \end{tabular*}
+  \caption{Example code snippet and the corresponding LLVM code. This code segment contains three blocks: \code{entry}, \code{if.then}, and \code{if.end}. The conditional statement is implemented in LLVM by the conditional branch at the end of the entry block. }
+  \figlabel{CFG}
+  \vspace{-.4cm}
+\end{figure*}
+
+To represent parallelism, Tapir introduces the \code{detach}, \code{reattach}, and
+\code{sync} instructions. The \code{detach} statement is syntactically similar to
+the conditional branch as it is also a terminator instruction with with two blocks.
+However, unlike the conditional branch which denotes a choice between successors, the \code{detach} instruction denotes that its two successors may run in parallel. Semantically,
+the first successor of a \code{detach} instruction is referred to as the \textbf{detached block} and represents a task that can, but is not required to, run in parallel with the
+\textbf{continuation block}, or the second successor to the detach statement. The \code{detach}
+is analagous to a \code{fork} in most fork-join frameworks.
+
+At the end of any task created by a \code{detach} instruction, one must end with a \code{reattach} instruction to the corresponding continuation block. The \code{reattach} instruction
+is used to denote the end of a parallel task.
+
+Finally, one may use the \code{sync} instruction to wait for any outstanding tasks created
+by \code{detach} instructions within the current function to complete. The \code{sync}
+instruction is analagous to a \code{join} in most fork-join frameworks.
+
 
 \section{OpenMP Tasks} \label{Sec:OpenMP}
 
@@ -369,7 +478,7 @@ construct waits for completion of all tasks generated by the current task.
 
 Recursive task creations and synchronizations using the constructs result in 
 an implicit directed acyclic graph (DAG) that allows both reasoning about and 
-visualization of the program execution.  Figure~\ref{Fig:fib-graph-to-schedule}
+visualization of the program execution.  \figref{fib-graph-to-schedule}
 shows some example code, a view of the task DAG, and a simplified execution 
 schedule mapping the tasks to a team of two threads.  In the example, the Nth 
 Fibonacci number is calculated by recursively generating tasks to calculate 
@@ -413,7 +522,7 @@ int fib(int n)
 \end{center}
 \caption{Code, task graph, and schedule of a simple brute force recursive 
 Fibonacci number calculation on two threads.}
-\label{Fig:fib-graph-to-schedule}
+\label{fig:fib-graph-to-schedule}
 \end{figure*}
 
 The initial design of the OpenMP task model~\cite{ayguade09design} established 
@@ -510,7 +619,7 @@ paper is tagged as LLVM17.
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
-\texttt{fib} example from Section~\ref{Sec:OpenMP}. In Figure~\ref{Fig:Example}
+\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{fig:Example}
 we show what Tapir code is generated.  
 
 \begin{figure*}
@@ -564,7 +673,7 @@ det.cont4:
 \end{tabular}
 
 \caption{Compilation to Tapir}
-\label{Fig:Example}
+\label{fig:Example}
 \end{figure*}
 
 The listed Tapir LLVM IR code corresponds to lines 7 through 12 of the C source
@@ -993,7 +1102,7 @@ it easier to write optimization for parallel programs.
 Sandia National Laboratories is a multimission laboratory managed and operated 
 by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
-Energy’s National Nuclear Security Administration under contract DE-NA-0003525.
+Energy's National Nuclear Security Administration under contract DE-NA-0003525.
 
 
 This work was supported by the Director, Office of Advanced Scientific
@@ -1010,7 +1119,7 @@ Department of Energy under contract DE-AC52-06NA25396.
 Work supported by the Advanced Simulation and Computing program of the
 U.S. Department of Energy's NNSA\@.  Los Alamos National Laboratory is
 managed and operated by Los Alamos National Security, LLC (LANS), under
-contract number DE-AC52-06NA25396 for the Department of Energy’s
+contract number DE-AC52-06NA25396 for the Department of Energy's
 National Nuclear Security Administration (NNSA).
 
 \bibliographystyle{ACM-Reference-Format}
