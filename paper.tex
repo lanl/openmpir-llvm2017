@@ -800,7 +800,8 @@ function of both the compiler and any optimizations it's able to perform, and
 the runtime.  Understanding the interaction of these two parts is non-trivial,
 as we will see when discussing results. Each compiler was run with the flags
 \texttt{-O3 -fopenmp}. Our compiler was also run with \texttt{-ftapir} to
-enable Tapir instructions.
+enable Tapir instructions to be lowered to a parallel runtime (in this case,
+the default Cilk runtime).
 
 As mentioned in the Section~\ref{Sec:Implementation}, the gaps in the implementation
 changed program behaviour in a couple cases. In the case of \texttt{FFT}, we were
@@ -923,7 +924,7 @@ only performance counter information. A more thorough investigation would
 require careful knowledge of each of the frontends and runtimes. One thing we
 can guess at is that despite the focus of the paper, \emph{IR optimisations are
 unlikely to be the cause of performance improvements}. Our evidence for this
-comes from Shardl et al. \cite{tapir}. While some IR optimisations have been
+comes from Schardl et al. \cite{tapir}. While some IR optimisations have been
 implemented, they seem to have significantly more effect on parallel loop code,
 while the tasking code remains relatively unaffected by IR optimizations
 \cite{tapir}. 
