@@ -63,10 +63,12 @@
 \begin{abstract}
 Optimizing compilers for task-level parallelism are still in their infancy.
 This work implements a frontend which compiles a subset of OpenMP tasks to
-Tapir. This enables analyses and optimizations previously inaccessible to
-OpenMP codes. Initial performance results for the Barcelona OpenMP tasking
-suite and show performance improvements over existing OpenMP compiler
-implementations. 
+Tapir, an extension to LLVM that represents fork-join parallelism. This enables
+analyses and optimizations previously inaccessible to OpenMP codes, as well as
+the ability to target other runtimes. Using a Cilk runtime backend, we compare
+to existing OpenMP implementations. Initial performance results for the
+Barcelona OpenMP tasking suite and show performance improvements over existing
+OpenMP compiler implementations. 
 \end{abstract}
 
 \maketitle
@@ -97,8 +99,9 @@ suggested that a similar approach could be taken with OpenMP tasks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This enables us to target non-openmp
-runtimes and compare performance to existing OpenMP implementations. Specifically,
-we run our prototype implementation on the Barcelona OpenMP task suite
+runtimes and compare performance to existing OpenMP implementations. For this
+paper, our prototype implementation uses a Cilk runtime as a backend, and we run
+our prototype implementation on the Barcelona OpenMP task suite
 \cite{barcelona}. We discuss the kinds of optimizations this enables, and how
 the work could be extended to include other parallelism constructs and semantics
 in OpenMP. We also discuss the possibility of extending this work to other
@@ -109,8 +112,8 @@ The contributions of this work include:
 
 \begin{itemize}
 \item A prototype frontend from OpenMP task constructs to Tapir IR
-\item Benchmarks of the implementation, showing performance improvements over
-existing OpenMP implementations
+\item Benchmarks of the implementation using a Cilk runtime backend, showing
+performance improvements over existing OpenMP implementations
 \item An initial investigation into the reasons for the performance improvement
 \end{itemize}
 
@@ -118,7 +121,7 @@ Our hope for this paper is that it moves the community towards a shared IR that
 can be used for many programming models. This work presented in this paper only
 represents a small step in that direction, and there is still a herculean amount
 of work required. We argue that the benefits vastly outweigh the costs, and
-hope to see more work follow suite. 
+hope to see more work follow suit. 
 
 \subsection{Outline}
 
@@ -181,12 +184,15 @@ standalone languages, to combinations of the above, fragmentation of parallel
 programming models is a problem that is only getting worse. This means that
 when writing tooling, optimizations, or analyses, one has to choose which model
 to target. One common difficulty among all of these is that reasoning about
-parallel programs is hard \cite{}, and compilers can help \cite{}. Therefore
-any duplicated work is extremely costly.  This is exactly analogous the problem
-LLVM helps to solve.  Many optimizations and analyses can be applied across a
-wide range of programming languages and hardware, but until there was an
-effective IR, those were often duplicated, resulting in a lot of lost
-opportunity. 
+parallel programs is hard \cite{}, and compilers can help \cite{}. This is
+exactly analogous the problem LLVM solves: compiler optimizations are
+hard to do well, so sharing them is valuable. Tapir is a natural extension 
+
+With fragmentation comes questions of compatibility, or composability, of 
+different programming models. To illustrate this issue, consider the example of
+a program using a library that uses OpenMP to implement parallelism internally. 
+If said program uses a different programming model for parallelism, e.g. Cilk
+, there is currently no good solution for 
 
 Addressing these concerns this is a major motivation for our use of Tapir.
 By standardising an IR, in addition to easing the development of optimizations,
@@ -215,7 +221,8 @@ before this so I'm not sure what level of introduction you're thinking of.}
 \gsnote{I was thinking roughly a page should be enough. Maybe a summary of what
 Tapir is followed by an example of an optimization it enables. I like both the
 CSE and tail-call optimization examples from your PPoPP paper. Feel free to 
-define CFG and any other terms you need to.}
+define CFG and any other terms you need to. If that's too much to ask on such 
+short notice just let me know and I'll help out.}
 
 \section{OpenMP Tasks} \label{Sec:OpenMP}
 
@@ -773,6 +780,14 @@ challenging at best to map onto Tapir's instructions. Furthermore, even if it
 is possible to implement features using the Tapir instructions, it may require 
 such radical entangling of the code that even if analysis is technically
 possible, it becomes infeasible. 
+
+While OpenMP and Cilk have similar fork-join style semantics that Tapir
+implements naturally, many allow a more flexible mechanism for synchronization:
+futures \cite{qthreads, hpx, chapel, charm++}. The primary difference
+between the fork-join parallelism represented by Tapir and these approaches
+is that \emph{child tasks can outlive their parents}. Figuring out how
+to represent this class of parallelism in Tapir represents a significant
+challenge for future work.
 
 \subsection{Related Work} \label{Sec:Related}
 
