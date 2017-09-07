@@ -16,6 +16,12 @@
 \usepackage[utf8x]{inputenc}
 \usepackage{autofe}
 
+\lstset{numbers=left,
+         numberstyle=\tiny,
+         numbersep=5pt,
+         xleftmargin=0.1in
+}
+
 % Copyright
 %\setcopyright{none}
 %\setcopyright{acmcopyright}
@@ -82,16 +88,16 @@ Qthreads, pthreads, MPI, Chapel, UPC, etc. have virtually no ability to
 interoperate, both at compile time and run time. In addition, many of these
 programming models are implemented as libraries, and therefore have no compiler
 support. There has been some recent work on specializing compilers to reason
-about libraries \cite{kokkos}, but fragmentation among models presents a
-significant challenge for compiler writers, which must choose a single model to
-analyze and optimize. An ideal solution would be some form of common
-representation of parallelism that all IRs can share.
+about parallel programming libraries \cite{Moss_2016}, but fragmentation among
+models presents a significant challenge for compiler writers, which must choose
+a single model to analyze and optimize. An ideal solution would be some form of
+common representation of parallelism in an internal representation \textbf{(IR)}.
 
 Compilers use internal representations (IRs) for implementing analyses and
 optimizations. Historically, a major drawback for parallel programs is that IRs
-don't have the ability to represent, and therefore reason about, parallelism.
-This prevents the application of common optimizations to concurrent code. The
-recent work of Schardl et al.  \cite{shardl2017} has shown that real world
+haven't had the ability to represent, and therefore reason about, parallelism.
+This has prevented the application of common optimizations to concurrent code.
+The recent work of Schardl et al.  \cite{shardl2017} has shown that real world
 compiler IRs can be extended to represent fork-join parallelism. By extending
 the LLVM instruction set with three instructions, they were able to capture all
 of the semantics to implement the semantics of Cilk, an extension to C. They
@@ -139,8 +145,8 @@ Section~\ref{Sec:Future}, and conclude in Section~\ref{Sec:Conclusion}.
 
 \section{Background} \label{Sec:Background}
 
-\textbf{Internal representations (IRs)} are a crucial part of modern compilers.
-By representing code in a generic, hardware-agnostic format, they allow both
+Internal representations (IRs) are a crucial part of modern compilers.  By
+representing code in a generic, hardware-agnostic format, they allow both
 multiple frontends for different source languages, and multiple backends for
 different hardware, to all take advantage of a series of compiler optimizations
 and analyses. 
@@ -153,9 +159,9 @@ relatively painless modification}
 Among IRs, LLVM is arguably the most ubiquitous \cite{llvm}. Winner of the
 2012 ACM Software System Award, it is in use by frontends ranging from Haskell
 to C++, and backends ranging from x86 to PTX \cite{}. Implementing a simple,
-extensible \textbf{single static assignment (SSA)} IR, LLVM enables powerful
-optimizations that are effective for a wide range of programming languages and
-hardware \cite{llvm}. 
+extensible single static assignment IR, LLVM enables powerful optimizations
+that are effective for a wide range of programming languages and hardware
+\cite{llvm}. 
 
 Historically, LLVM has had a sequential semantics: there is no explicit notion
 of concurrent or parallel processes. This has resulted in existing compilers
@@ -177,27 +183,32 @@ is presented in Section~\ref{Sec:OpenMP}. For a more complete description see
 
 \subsection{Fragmentation}
 
-In this section we discuss a significant challenge in HPC: fragmentation of
-parallel programming models. There are many, many, many ways to write
-parallel programs \cite{....}. From libraries, to language extensions, to
-standalone languages, to combinations of the above, fragmentation of parallel
-programming models is a problem that is only getting worse. This means that
-when writing tooling, optimizations, or analyses, one has to choose which model
-to target. One common difficulty among all of these is that reasoning about
-parallel programs is hard \cite{}, and compilers can help \cite{}. This is
-exactly analogous the problem LLVM solves: compiler optimizations are
-hard to do well, so sharing them is valuable. Tapir is a natural extension 
+In this section we further discuss a significant challenge in HPC:
+fragmentation of parallel programming models. There are many, many, many ways
+to write parallel programs \cite{....}. From libraries, to language extensions,
+to standalone languages, to combinations of the above, fragmentation of
+parallel programming models is a problem that is only getting worse. This means
+that when writing tooling, optimizations, or analyses, one has to choose which
+model to target. One common difficulty among all of these is that reasoning
+about parallel programs is hard \cite{}, and compilers can help \cite{}. This
+is exactly analogous the problem LLVM solves: compiler optimizations are hard
+to do well, so sharing them is valuable. Tapir is a demonstration that the 
+the solutions in the case of serial code can be effectively extended to the 
+case of parallel code. 
 
 With fragmentation comes questions of compatibility, or composability, of 
 different programming models. To illustrate this issue, consider the example of
 a program using a library that uses OpenMP to implement parallelism internally. 
 If said program uses a different programming model for parallelism, e.g. Cilk
-, there is currently no good solution for 
+, there is currently no good solution for ensuring that the two different backends
+will cooperate with management of hardware resources. 
 
 Addressing these concerns this is a major motivation for our use of Tapir.
 By standardising an IR, in addition to easing the development of optimizations,
-one avoids duplicating work across different implementations. We'll return to
-this issue later in Section~\ref{Sec:Future} when discussing future work.
+one avoids duplicating work across different implementations. It also enables
+the possibility of multiple programming models coexisting peacefully. We'll
+return to this issue later in Section~\ref{Sec:Discussion} when discussing
+future work.
 
 \section{Tapir} \label{Sec:Tapir}
 Tapir is an extension to LLVM proposed by Schardl, Moses, and Leiserson
@@ -245,8 +256,6 @@ the (N-1)th and (N-2)th Fibonacci numbers.  The \texttt{taskwait} ensures that
 the child tasks have completed before their answers are combined to yield the 
 final result.
 
-\lstset{basicstyle=\tt\small, language=C, 
-morekeywords={omp, for, pragma, omp, task, taskwait}}
 \begin{figure*}
 \begin{center}
 \begin{tabular}{| c c c | c c c | c c c |}
@@ -318,8 +327,8 @@ on the thread where it is generated).
 
 \section{Implementation}
 
-Tapir is implemented as an extension to the LLVM instruction set. Clang is a
-C family compiler that has support for OpenMP extensions \cite{clang} and targets
+Tapir is implemented as an extension to the LLVM instruction set. Clang is a C
+family compiler that has support for OpenMP extensions \cite{clang} and targets
 LLVM. The existing Clang OpenMP implementation maps OpenMP constructs directly
 to OpenMP runtime library calls, by wrapping a C statement in a
 \texttt{CapturedStmt}. This replaces a C statement with a function call into
@@ -336,7 +345,7 @@ the Tapir implementation.
 
 While we did implement the codegen for the \texttt{task\_spawn} and
 \texttt{task\_wait} constructs, it's worth noting here that even for these
-pragmas, the implementation is incomplete. Currently, any clauses modifying the 
+pragmas, the implementation is incomplete. Currently, any clauses modifying the
 behaviour of the pragmas is ignored. Probably the most common semantics this
 will change of variable semantics, e.g. \texttt{shared} vs. \texttt{private}.
 Surprisingly, this had little effect on the correctness of the entire Barcelona
@@ -346,12 +355,11 @@ copies for variables declared \texttt{private} in OpenMP code. This property
 that behaviour wasn't changed significantly is worth revisiting, and we do so
 in Section~\ref{Sec:Discussion}. 
 
-A very important property of the current implementation to discuss is the
-backend. This work has \emph{only been on the frontend}, which means we use
-the only existing backend for Tapir. The existing backend generates calls into
-the Cilk runtime, \texttt{libcilkrts}. This obviously has many implications for
-adhering to the OpenMP specification. For example, environment variables such
-as \texttt{OMP\_NUM\_THREADS} are ignored, replaced by \texttt{CILK\_NWORKERS}.
+This work has \emph{only been on the frontend}, which means we use the only
+existing backend for Tapir, which generates code that calls into the Cilk
+runtime, \texttt{libcilkrts}. This has implications for adhering to the OpenMP
+specification. For example, environment variables such as
+\texttt{OMP\_NUM\_THREADS} are ignored, replaced by \texttt{CILK\_NWORKERS}.
 We discuss some of these issues below, and return to address others in the
 future work section. 
 
@@ -371,7 +379,8 @@ examples except for one, in which after the \texttt{parallel} and
 implementation, the simple fix was to remove the \texttt{task} pragma. This was
 the only change required to the source code. Our temporary no-op shortcut, of
 course, doesn't follow the OpenMP specification, and should be addressed by
-future work. 
+future work. See Section~\ref{Sec:Future} for a further discussion how how the 
+implementation can be improved.
 
 All code used for the implementation is available at \\
 \texttt{https://github.com/lanl/openmpir-clang}. The version used for this
@@ -405,7 +414,7 @@ int fib(int n)
 }
 \end{lstlisting}
 & & &
-\begin{lstlisting}
+\begin{lstlisting}[language=llvm]
 if.end:                                 
   detach within %syncreg, label %det.achd, label %det.cont
 
@@ -436,6 +445,18 @@ det.cont4:
 \caption{Compilation to Tapir}
 \label{Fig:Example}
 \end{figure*}
+
+The listed Tapir LLVM IR code corresponds to lines 7 through 12 of the C source
+code.  Upon entering the \texttt{else} branch, the code immediately detaches
+the basic block corresponding to the call to \texttt{fib(n-1)}, labeled
+\texttt{det.achd}. The continuation for the first call also immediately
+detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
+Finally, the continuation for the second call immediately calls sync. This is
+actually a nice example of code that will be optimized by Tapir. The LLVM code
+shown in Figure~\ref{Fig:Example} is not optimized. With optimizataions turned
+on, Tapir will replace a \texttt{detach} of a function call followed
+immediately by \texttt{sync} with a simple function call, resulting in faster
+code. 
 
 \section{Evaluation} \label{Sec:Evaluation}
 
