@@ -4,6 +4,7 @@
 
 \usepackage{booktabs} % For formal tables
 \usepackage{multicol}
+\usepackage{minted}
 \graphicspath{{./figs/}}
 
 % Dejavu fonts have unicode character support
@@ -11,6 +12,19 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{listings}
+\usepackage{subfigure}
+\newcommand{\figlabel}[1]   {\label{fig:#1}}
+\newcommand{\figref}[1]         {Figure~\ref{fig:#1}}
+\newcommand{\figreftwo}[2]      {Figures \ref{fig:#1} and~\ref{fig:#2}}
+\newcommand{\figrefthree}[3]      {Figures \ref{fig:#1}, \ref{fig:#2} and~\ref{fig:#3}}
+\newcommand{\subfiglabel}[1]    {\textbf{#1}}
+\newcommand{\subfigcap}[1]      {\textbf{~~#1}}
+\newcommand{\subfigref}[2]      {Figure~\ref{fig:#1}#2}
+\newcommand{\subfigreftwo}[3]      {Figures~\ref{fig:#1}#2 and~\ref{fig:#1}#3}
+
+\definecolor{CodeColor}{RGB}{98,39,26}
+\def\code{\lstinline[basicstyle=\ttfamily\color{CodeColor}]} 
+
 
 \usepackage{ucs}
 \usepackage[utf8x]{inputenc}
@@ -47,6 +61,8 @@
 %\acmPrice{15.00}
 
 \begin{document}
+\lstset{basicstyle=\tt\small, language=C, 
+morekeywords={omp, for, pragma, omp, task, taskwait}}
 
 \title{OpenMPIR}
 \subtitle{Implementing OpenMP tasks with Tapir}
@@ -223,6 +239,110 @@ the authors show that it is possible to represent and optimize fork-join
 parallel programs with relatively minimal modifications to the compiler: namely
 the introduction of three instructions designed to interface well with an
 existing compiler.
+
+\subsection{Compilation without Tapir}
+
+\setminted{fontsize=\small,baselinestretch=1}
+\begin{figure}[t]
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}l@{}l}
+
+\subfiglabel{a}\\
+\begin{lstlisting}
+void search(int low, int high) {
+  if (low == high) search_base(low);
+  else {
+    #pragma omp task
+    search(low, (low+high)/2);
+    #pragma omp task
+    search((low+high)/2 + 1, high);
+    #pragma omp taskwait
+  } 
+}
+\end{lstlisting}
+\\
+\subfiglabel{b}\\
+\begin{lstlisting}
+void search(int low, int high) {
+  if (low == high) search_base(low);
+  else {
+    int mid = (low+high)/2;
+    #pragma omp task
+    search(low, mid);
+    #pragma omp task
+    search(mid + 1, high);
+    #pragma omp taskwait
+  } 
+}
+\end{lstlisting}
+\vspace{0.1ex}
+\end{tabular*}
+
+\caption[Example of common-subexpression elimination on an OpenMP
+    program.]{Example of common-subexpression elimination on an OpenMP
+    program.  \subfigcap{a}~The function \code{search}, which uses
+    parallel divide-and-conquer to apply the function
+    \code{search_base} to every integer in the closed interval
+    [\code{low}, \code{high}].  \subfigcap{b}~An optimized version of
+    \code{search}, where the common subexpression \code{(low+high)/2}
+    of the original version
+    is computed only once and stored in the variable \code{mid} in
+    the optimized version.}
+  \label{fig:search}
+\end{figure}
+
+Consider the first code segment defined in \figref{search}.
+Here, we find a simple OpenMP program which performs a divide-and-conquer search.
+However, as written, there is a simple optimization that can be performed --
+namely, that the value \code{(low+high)/2} may be computed once before either
+parallel task, allowing the program to avoid some redundant computation. On
+the serial version of this program, optimizations like this are performed
+automatically. However, without the use of Tapir, these sorts of optimizations
+are not run on parallel programs.
+
+If one were to compile this program using the traditional technique of converting
+to runtime calls, one would find a program similar to \figref{runtime_calls}.
+The OpenMP pragmas are effectively treated as syntactic sugar for such runtime calls
+because vanilla LLVM has no concise way to represent parallel programs.
+These runtime calls obfuscate the program, making it impossible to analyze or
+optimize parallel code.
+
+\begin{figure}[t]
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}l@{}l}
+\begin{lstlisting}
+void task_1(int* clos) {
+  search(*clos[0], (*clos[0] + *clos[1])/2);
+}
+
+void task_2(int* clos) {
+  search(*clos[0], (*clos[0] + *clos[1])/2);
+}
+
+void search(int low, int high) {
+  if (low == high) search_base(low);
+  else {
+    int* closure_1[] = {&low, &high};
+    omp_run_task(task_1, closure_1);
+    int* closure_2[] = {&low, &high};
+    omp_run_task(task_2, closure_2);
+    omp_taskwait();
+  } 
+}
+\end{lstlisting}
+\vspace{0.1ex}
+\end{tabular*}
+
+\caption[Simplified compilation of the unoptimized search code from \figref{search}.]{Simplified compilation of the unoptimized search code from \figref{search}.  \subfigcap{a}~The function \code{search}. The parallel tasks are moved into their own functions and accompanying closures. These functions are then passed to OpenMP runtime calls. This system obfuscates the program, making it impossible for an optimizer to reason about what is happening.}
+  \label{fig:runtime_calls}
+\end{figure}
+
+\subsection{Tapir Internals}
+Tapir is a compelling solution to this problem because it allows existing
+analysis and optimizations to work on parallel programs without much modification.
+Tapir does this by extending LLVM's instruction set to natively represent
+fork-join parallel programs in a way that 
+
+... TODO ...
+
 
 Specifically, Tapir introduces the \texttt{detach}, \texttt{reattach}, and
 \texttt{sync} instructions. \wmnote{How in detail should I go here? I can talk

@@ -17,25 +17,25 @@ all:  ${PDF}
 
 
 %.pdf:  %.dtx   $(PACKAGE).cls figs/*.pdf
-	pdflatex $<
+	pdflatex --shell-escape $<
 	- bibtex $*
-	pdflatex $<
+	pdflatex --shel-escape $<
 	- makeindex -s gind.ist -o $*.ind $*.idx
 	- makeindex -s gglo.ist -o $*.gls $*.glo
 	pdflatex $<
 	while ( grep -q '^LaTeX Warning: Label(s) may have changed' $*.log) \
-	do pdflatex $<; done
+	do pdflatex --shell-escape $<; done
 
 %.cls:   %.ins %.dtx  
 	pdflatex $<
 
 %.pdf:  %.tex   $(PACKAGE).cls ACM-Reference-Format.bst
-	pdflatex $<
+	pdflatex --shell-escape $<
 	- bibtex $*
-	pdflatex $<
-	pdflatex $<
+	pdflatex --shell-escape $<
+	pdflatex --shell-escape $<
 	while ( grep -q '^LaTeX Warning: Label(s) may have changed' $*.log) \
-	do pdflatex $<; done
+	do pdflatex --shell-escape $<; done
 
 paper.pdf: paper.tex
 
