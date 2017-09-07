@@ -921,13 +921,25 @@ We can break reasons for performance discrepancies into a few categories:
 
 While we would like to distinguish between these, it is difficult to do so with
 only performance counter information. A more thorough investigation would
-require careful knowledge of each of the frontends and runtimes. One thing we
-can guess at is that despite the focus of the paper, \emph{IR optimisations are
-unlikely to be the cause of performance improvements}. Our evidence for this
-comes from Schardl et al. \cite{tapir}. While some IR optimisations have been
-implemented, they seem to have significantly more effect on parallel loop code,
-while the tasking code remains relatively unaffected by IR optimizations
-\cite{tapir}. 
+require deep knowledge of each of the frontends and runtimes. While the
+importance of optimizations of parallel code is clear, we hypothesize that most
+of the disparity present in these results is a function of runtime
+implementation differences. Our evidence for this comes from Schardl et al.
+\cite{tapir}. Generally, the effect of the optimizations that have been
+implemented for Tapir IR are outweighed by runtime contention, memory accesses,
+etc. for parallel runs. \gsnote{Billy, this OK? Don't want to sound too
+negative about the importance of the optimizations you've implemented.}
+\wmnote{So actually the memory accesses are happily an optimization Tapir does
+-- mainly some mem2reg optimization that may not make much of a different (though still something)
+on one core, is a lot more impactful on multicores because of issues regarding contention
+forcing a cache line flush.
+Also I'm not convinced there wasn't an impact on FFT/nqueens because we did see a
+decent improvement from tapir on that -- though I wouldn't be suprised to see the runtime
+contribute a large chunk of that.
+Fibonacci is certainly runtime based because there's basically no work inside of
+it so its almost entirely a measurement of the runtime efficiency.
+Sort I'm not sure on depending on the implementation
+}
 
 There are two cases we'd like to look at using the profiler. The first is a 
 case when there is a large difference in runtime between implementations. For 
@@ -936,8 +948,8 @@ are, for some reason, spending more time in the runtime. As mentioned above,
 it is difficult to understand exactly why an implementation is spending more 
 time in the runtime without further investigation, but it is a useful 
 sanity check nonetheless. For this case, we turn to the \texttt{Fib} benchmark.
-Indeed, we get roughly the following breakdowns of work to overhead ratio according
-to the Linux \texttt{perf} tool:
+Indeed, we get roughly the following breakdowns of work to overhead ratio
+according to the Linux \texttt{perf} tool:
 
 \begin{itemize}
 \item \texttt{tapir: ~30\% runtime overhead, ~50\% work, ~20\% other}
@@ -946,13 +958,10 @@ to the Linux \texttt{perf} tool:
 \item \texttt{gcc: ~100\% runtime overhead, ~0\% work, ~0\% other}
 \end{itemize}
 
-This confirms our suspicions that most of the slowdown incurred is overhead in
+This supports our hypothesis that most of the slowdown incurred is overhead in
 the runtime. For \texttt{tapir}, the overhead is relatively small given the
 size of the work chunks, for \texttt{clang} and \texttt{icc} it is
 significantly larger, while for \texttt{gcc} it is completely overwhelming.
-This does let us rule out the possibility that somehow the only the codegen for
-other implementations is the culprit: it is almost certainly at least partially
-the runtime implementation.  
 
 For the cases where performance is close between implementations, like
 \texttt{sparselu}, we expect runtimes to be dominated by actual task work. This 
@@ -972,8 +981,9 @@ widely used model that has a notion of tasks.
 The goal of this work is to show that a single intermediate representation can be
 used to implement multiple programming models, with good performance. Schardl et 
 al. showed that Tapir works well as an IR for Cilk, and surmised that it could
-be an effective IR for a large subset of OpenMP. This work has taken the first
-step in that direction, showing that it can work well as an IR for OpenMP tasks. 
+be an effective IR for a large subset of OpenMP \cite{tapir}. This work has
+taken the first step in that direction, showing that it can work well as an IR
+for OpenMP tasks. 
 
 One interesting aspect of this work is that it compiles a language extension intended
 for one runtime (OpenMP runtimes) to use another (the Cilk runtime). While in many
@@ -1011,8 +1021,8 @@ their semantic properties.
 One of the important questions for this work is whether or not the Tapir
 instructions can be extended to cover the full OpenMP semantics. As shown
 in this paper, even the full semantics of OpenMP tasks weren't covered. Runtime
-calls aside, implementing the full semantics of OpenMP pragmas would be a 
-significant undertaking.
+calls aside, implementing the full semantics of OpenMP pragmas would be a
+significant undertaking. 
 
 As two examples, let us consider the problematic \texttt{atomic} and
 \texttt{critical} pragmas from the \texttt{Floorplan} benchmark. The 
@@ -1036,6 +1046,11 @@ challenging at best to map onto Tapir's instructions. Furthermore, even if it
 is possible to implement features using the Tapir instructions, it may require 
 such radical entangling of the code that even if analysis is technically
 possible, it becomes infeasible. 
+
+An obvious first step towards better OpenMP coverage, other than the features
+listed above, is OpenMP \texttt{parallel for} loops. These are similar enough
+to \texttt{cilk\_for} loops in semantics that this also should be a relatively
+painless next step to adapt from the existing Cilk implementation. 
 
 While OpenMP and Cilk have similar fork-join style semantics that Tapir
 implements naturally, many allow a more flexible mechanism for synchronization:
