@@ -64,14 +64,17 @@
   organization={IEEE}
 }
 
-@book{blumofe1995cilk,
+@article{cilk,
   title={Cilk: An efficient multithreaded runtime system},
-  author={Blumofe, R.D. and Joerg, C.F. and Kuszmaul, B.C. and Leiserson, C.E. and Randall, K.H. and Zhou, Y.},
-  volume={30},
-  number={8},
-  year={1995},
-  publisher={ACM}
+  author={Blumofe, Robert D and Joerg, Christopher F and Kuszmaul, Bradley C and Leiserson, Charles E and Randall, Keith H and Zhou, Yuli},
+  journal={Journal of parallel and distributed computing},
+  volume={37},
+  number={1},
+  pages={55--69},
+  year={1996},
+  publisher={Elsevier}
 }
+
 
 
 @article{sankaran2005lam,
@@ -637,7 +640,7 @@
   organization={Springer}
 }
 
-@inproceedings{schardl2017tapir,
+@inproceedings{tapir,
   title={Tapir: Embedding Fork-Join Parallelism into LLVM's Intermediate Representation},
   author={Schardl, Tao B and Moses, William S and Leiserson, Charles E},
   booktitle={Proceedings of the 22nd ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming},
@@ -737,4 +740,52 @@
 }
 
 @misc{Moss_2016, place={United States}, title={Kokkos GPU Compiler}, url={http://www.osti.gov/scitech/servlets/purl/1310548}, abstractNote={The Kokkos Clang compiler is a version of the Clang C++ compiler that has been modified to perform targeted code generation for Kokkos constructs in the goal of generating highly optimized code and to provide semantic (domain) awareness throughout the compilation toolchain of these constructs such as parallel for and parallel reduce. This approach is taken to explore the possibilities of exposing the developer’s intentions to the underlying compiler infrastructure (e.g. optimization and analysis passes within the middle stages of the compiler) instead of relying solely on the restricted capabilities of C++ template metaprogramming. To date our current activities have focused on correct GPU code generation and thus we have not yet focused on improving overall performance.  The compiler is implemented by recognizing specific (syntactic) Kokkos constructs in order to bypass normal template expansion mechanisms and instead use the semantic knowledge of Kokkos to directly generate code in the compiler’s intermediate representation (IR); which is then translated into an NVIDIA-centric GPU program and supporting runtime calls. In addition, by capturing and maintaining the higher-level semantics of Kokkos directly within the lower levels of the compiler has the potential for significantly improving the ability of the compiler to communicate with the developer in the terms of their original programming model/semantics.}, author={Moss, Nicholas}, year={2016}, month={Jul}}
+
+@inproceedings{qthreads,
+  title={Qthreads: An API for programming with millions of lightweight threads},
+  author={Wheeler, Kyle B and Murphy, Richard C and Thain, Douglas},
+  booktitle={Parallel and Distributed Processing, 2008. IPDPS 2008. IEEE International Symposium on},
+  pages={1--8},
+  year={2008},
+  organization={IEEE}
+}
+ 
+@article{chapel,
+  title={Parallel programmability and the chapel language},
+  author={Chamberlain, Bradford L and Callahan, David and Zima, Hans P},
+  journal={The International Journal of High Performance Computing Applications},
+  volume={21},
+  number={3},
+  pages={291--312},
+  year={2007},
+  publisher={Sage Publications Sage UK: London, England}
+}
+
+@article{kokkos,
+  title={Kokkos: Enabling manycore performance portability through polymorphic memory access patterns},
+  author={Edwards, H Carter and Trott, Christian R and Sunderland, Daniel},
+  journal={Journal of Parallel and Distributed Computing},
+  volume={74},
+  number={12},
+  pages={3202--3216},
+  year={2014},
+  publisher={Elsevier}
+}
+
+@inproceedings{legion,
+  title={Legion: Expressing locality and independence with logical regions},
+  author={Bauer, Michael and Treichler, Sean and Slaughter, Elliott and Aiken, Alex},
+  booktitle={Proceedings of the international conference on high performance computing, networking, storage and analysis},
+  pages={66},
+  year={2012},
+  organization={IEEE Computer Society Press}
+}
+
+@inproceedings{clang,
+  title={LLVM and Clang: Next generation compiler technology},
+  author={Lattner, Chris},
+  booktitle={The BSD Conference},
+  pages={1--2},
+  year={2008}
+}
 

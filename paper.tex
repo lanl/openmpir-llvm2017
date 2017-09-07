@@ -113,7 +113,7 @@ Compilers use internal representations (IRs) for implementing analyses and
 optimizations. Historically, a major drawback for parallel programs is that IRs
 haven't had the ability to represent, and therefore reason about, parallelism.
 This has prevented the application of common optimizations to concurrent code.
-The recent work of Schardl et al.  \cite{shardl2017} has shown that real world
+The recent work of Schardl et al. \cite{tapir} has shown that real world
 compiler IRs can be extended to represent fork-join parallelism. By extending
 the LLVM instruction set with three instructions, they were able to capture all
 of the semantics to implement the semantics of Cilk, an extension to C. They
@@ -147,7 +147,7 @@ hope to see more work follow suit.
 
 \subsection{Outline}
 
-The remainder of the paper is organized as follows: In Section~\ref{Sec:background} 
+The remainder of the paper is organized as follows: In Section~\ref{Sec:Background} 
 we give background and motivation for the paper. Following that, we describe OpenMP
 tasking in Section~\ref{Sec:OpenMP}, and Tapir in Section~\ref{Sec:Tapir}. We then 
 discuss the implementation, and how we compile OpenMP task constructs to Tapir IR in
@@ -172,12 +172,12 @@ LLVM has gained traction in the academic community for both its simplicity and
 relatively painless modification} 
 \gsnote{I wanted to give a brief nod to the importance of LLVM, given the venue
 (LLVM in HPC). Is this any more satisfactory?} 
-Among IRs, LLVM is arguably the most ubiquitous \cite{llvm}. Winner of the
-2012 ACM Software System Award, it is in use by frontends ranging from Haskell
-to C++, and backends ranging from x86 to PTX \cite{}. Implementing a simple,
-extensible single static assignment IR, LLVM enables powerful optimizations
-that are effective for a wide range of programming languages and hardware
-\cite{llvm}. 
+Among IRs, LLVM is arguably the most ubiquitous \cite{lattner2004llvm}. Winner
+of the 2012 ACM Software System Award, it is in use by frontends ranging from
+Haskell to C++, and backends ranging from x86 to PTX \cite{lattner2004llvm}.
+Implementing a simple, extensible single static assignment IR, LLVM enables
+powerful optimizations that are effective for a wide range of programming
+languages and hardware \cite{lattner2004llvm}. 
 
 Historically, LLVM has had a sequential semantics: there is no explicit notion
 of concurrent or parallel processes. This has resulted in existing compilers
@@ -200,17 +200,17 @@ is presented in Section~\ref{Sec:OpenMP}. For a more complete description see
 \subsection{Fragmentation}
 
 In this section we further discuss a significant challenge in HPC:
-fragmentation of parallel programming models. There are many, many, many ways
-to write parallel programs \cite{....}. From libraries, to language extensions,
-to standalone languages, to combinations of the above, fragmentation of
-parallel programming models is a problem that is only getting worse. This means
-that when writing tooling, optimizations, or analyses, one has to choose which
-model to target. One common difficulty among all of these is that reasoning
-about parallel programs is hard \cite{}, and compilers can help \cite{}. This
-is exactly analogous the problem LLVM solves: compiler optimizations are hard
-to do well, so sharing them is valuable. Tapir is a demonstration that the 
-the solutions in the case of serial code can be effectively extended to the 
-case of parallel code. 
+fragmentation of parallel programming models. There are many ways to write
+parallel programs \cite{spec, qthreads, chapel, cilk, kokkos, legion}. From
+libraries, to language extensions, to standalone languages, to combinations of
+the above, fragmentation of parallel programming models is a problem that is
+only getting worse. This means that when writing tooling, optimizations, or
+analyses, one has to choose which model to target. One common difficulty among
+all of these is that reasoning about parallel programs is hard, and compilers
+can help. This is exactly analogous the problem LLVM solves: compiler
+optimizations are hard , so sharing them is valuable. Tapir is a demonstration
+that the the LLVM approach to compilation of serial code can be effectively
+extended to the case of parallel code. 
 
 With fragmentation comes questions of compatibility, or composability, of 
 different programming models. To illustrate this issue, consider the example of
@@ -445,7 +445,7 @@ suspension, which enables practical use of \textit{work-first scheduling}
 (suspending the parent task in favor of executing each child task immediately 
 on the thread where it is generated).
 
-\section{Implementation}
+\section{Implementation} \label{Sec:Implementation}
 
 Tapir is implemented as an extension to the LLVM instruction set. Clang is a C
 family compiler that has support for OpenMP extensions \cite{clang} and targets
@@ -580,25 +580,26 @@ code.
 
 \section{Evaluation} \label{Sec:Evaluation}
 
-For evaluation we compared performance on the Barcelona OpenMP task suite to 
-existing OpenMP implementations. The Barcelona OpenMP task suite is a set of 
-tests intended to test performance of OpenMP implementations using both
-irregular and regular tasking. The benchmarks are described in
-Figure~\ref{Fig:benchmark_desc}. The benchmark suite has added an unbalanced
-tree search benchmark since the paper was published.  Unfortunately, this seems
-to be buggy, and failed on every implementation for even medium input sizes. We
-have therefore left it out of our evaluation.
+For evaluation we compared performance on the Barcelona OpenMP task suite
+\cite{barcelona} to existing OpenMP implementations. The Barcelona OpenMP task
+suite is a set of tests intended to test performance of OpenMP implementations
+using both irregular and regular tasking. The benchmark suite has added an
+unbalanced tree search benchmark since the paper was published. Unfortunately
+we were unable to succesfully run it on any implementation, even for even
+medium input sizes. We have therefore left it out of our evaluation. The
+following descriptions are abridged versions taken verbatim from
+\cite{barcelona}:
 
 \begin{itemize}
 \item \texttt{Alignment}: aligns all protein sequences from  an  input
-file  against  every  other  sequence  using  the Myers  and Miller \cite{}
+file  against  every  other  sequence  using  the Myers and Miller 
 algorithm. The alignments are scored and the best score for each pair is
 provided as a result. The scoring method is  a  full  dynamic  programming
 algorithm. It uses  a  weight matrix to score mismatches, and assigns
 penalties for opening and extending gaps. The output is the best score for each
 pair of them.
 \item \texttt{FFT}: computes the one-dimensional Fast Fourier Transform
-of a vector of n complex values using the Cooley-Tukey \cite{cooley-tukey}
+of a vector of n complex values using the Cooley-Tukey 
 algorithm. This is a divide and conquer algorithm that  recursively  breaks
 down a Discrete Fourier Transform (DFT) into many smaller DFT’s. In each of the
 divisions multiple tasks are generated.
@@ -614,7 +615,7 @@ We hierarchically generate tasks  for  each  branch  of  the  solution  space.
 The  state  of  the algorithm needs to be copied into each newly created task
 so they can proceed. This implies that additional synchronizations have been
 introduced in the code to maintain the parent state alive.
-\item \texttt{Health}: simulates de Columbian Health Care System \cite{?}. It
+\item \texttt{Health}: simulates the Columbian Health Care System. It
 uses multilevel lists where each element in the structure  represents  a
 village with  a  list  of  potential patients and one hospital. The hospital
 has several double-linked lists representing the possible status of a patient
@@ -622,34 +623,34 @@ inside it (waiting, in assessment,   in   treatment   or   waiting   for
 reallocation).  At  each time step  all  patients  are  simulated  according
 with several probabilities (of getting sick, needing a convalescence treatment,
 or  being  reallocated to  an  upper  level  hospital).  A  task  is  created
-for  each  village being  simulated.  Once  the lower   levels   have   been
-simulated synchronization   occurs. 
+for  each  village being  simulated. Once the lower levels have been simulated
+synchronization occurs. 
 \item \texttt{NQueens}: computes  all  solutions  of  the n-queens
 problem, whose objective is to find a placement for $n$ queens on an $n \;
 \times \; n$ chessboard such that none of the queens attack any other. It uses
 a backtracking search algorithm with pruning. A task is created for each step
 of the solution.
 \item \texttt{Sort}: sorts a random permutation of n 32-bit numbers with  a
-fast  parallel  sorting  variation  \cite{mergesort}  of  the  ordinary
-mergesort.  First, it divides an array of elements in two halves, sorting  each
-half  recursively,  and  then  merging  the  sorted halves with a parallel
-divide-and-conquer method rather than the  conventional  serial  merge.  Tasks
-are  used  for  each  split and merge. When the array is too small, a serial
-quicksort is used  so increase  the  task  granularity.  To  avoid  the
-overhead of  quicksort,  an insertion  sort  is  used  for  very  small  arrays
-(below a threshold of 20 elements).
+fast  parallel  sorting  variation of  the  ordinary mergesort.  First, it
+divides an array of elements in two halves, sorting  each half  recursively,
+and  then  merging  the  sorted halves with a parallel divide-and-conquer
+method rather than the  conventional  serial  merge.  Tasks are  used  for
+each  split and merge. When the array is too small, a serial quicksort is used
+so increase  the  task  granularity.  To  avoid  the overhead of  quicksort, an
+insertion  sort  is  used  for  very  small  arrays (below a threshold of 20
+elements).
 \item \texttt{SparseLU}: computes an LU matrix factorization over
 sparse matrices. A first level matrix is composed by pointers to  small
 submatrices  that  may  not  be  allocated.  Due  to  the sparseness  of  the
 matrix,  a  lot  of  imbalance  exists.  Matrix size and submatrix size can be
 set at execution time. While a dynamic schedule can reduce the imbalance, a
-solution with tasks parallelism seems to obtain better results \cite{}. In each
+solution with tasks parallelism seems to obtain better results. In each
 of the sparseLU  phases,  a  task  is  created  for  each  block  of  the
 matrix that is not empty.
 \item \texttt{Strassen}: algorithm  uses  hierarchical  decomposition of a
-matrix for multiplication of large dense matrices \cite{}. Decomposition is
-done by dividing each dimension of the matrix into  two  sections  of  equal
-size. For each decomposition a task is created. 
+matrix for multiplication of large dense matrices. Decomposition is done by
+dividing each dimension of the matrix into  two  sections  of  equal size. For
+each decomposition a task is created. 
 \end{itemize}
 
 There are two classes of input sizes for the benchmarks. Some, like Floorplan,
