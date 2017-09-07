@@ -95,7 +95,7 @@ OpenMP compiler implementations.
 
 \maketitle
 
-\section{Introduction}
+\section{Introduction} \label{Sec:Introduction}
 
 When writing task-parallel programs today, one has a large selection of
 programming models. Unfortunately, despite having significant overlap in
@@ -475,13 +475,13 @@ copies for variables declared \texttt{private} in OpenMP code. This property
 that behaviour wasn't changed significantly is worth revisiting, and we do so
 in Section~\ref{Sec:Discussion}. 
 
-This work has \emph{only been on the frontend}, which means we use the only
-existing backend for Tapir, which generates code that calls into the Cilk
-runtime, \texttt{libcilkrts}. This has implications for adhering to the OpenMP
-specification. For example, environment variables such as
-\texttt{OMP\_NUM\_THREADS} are ignored, replaced by \texttt{CILK\_NWORKERS}.
-We discuss some of these issues below, and return to address others in the
-future work section. 
+This work represented in this paper is only frontend implementation, which
+means we use the only existing backend for Tapir. The existing backend
+generates code that calls into the Cilk runtime, \texttt{libcilkrts}. This has
+implications for adhering to the OpenMP specification. For example, environment
+variables such as \texttt{OMP\_NUM\_THREADS} are ignored, replaced by
+\texttt{CILK\_NWORKERS}.  We discuss some of these issues below, and return to
+address others in the future work section. 
 
 There are other issues that had to be overcome to run full OpenMP programs
 using Tapir as described above. Generally, in addition the the \texttt{task} 
@@ -726,9 +726,10 @@ as faulty.
 In this section we discuss the results of running our evaluation on our
 implementation, and how its performance compared to the existing
 implementations listed in Section~\ref{Sec:Evaluation}. See
-Figure~\ref{Fig:results} for a simple visualization of the performance. Each
-graph represents a single benchmark from the previously enumerated Barcelona
-benchmarks, and each bar represents one of the implementations. 
+Figures~\ref{Fig:results} and \ref{Fig:results2} for a simple visualization of
+the performance. Each graph represents a single benchmark from the previously
+enumerated Barcelona benchmarks, and each bar represents one of the
+implementations. 
 
 \begin{figure*}
 \begin{multicols}{2}
@@ -740,6 +741,7 @@ benchmarks, and each bar represents one of the implementations.
   \includegraphics[width=\linewidth]{nqueens.pdf}
 \end{multicols}
 \caption{Barcelona OpenMP Task Suite Results}
+\label{Fig:results}
 \end{figure*}
 
 \begin{figure*}
@@ -750,6 +752,7 @@ benchmarks, and each bar represents one of the implementations.
 \centering
 \includegraphics[width=0.45\linewidth]{strassen.pdf}
 \caption{Barcelona OpenMP Task Suite Results (continued)}
+\label{Fig:results2}
 \end{figure*}
 
 As mentioned earlier on \texttt{Floorplan} our implementation was sometimes
@@ -810,10 +813,10 @@ only performance counter information. A more thorough investigation would
 require careful knowledge of each of the frontends and runtimes. One thing we
 can guess at is that despite the focus of the paper, \emph{IR optimisations are
 unlikely to be the cause of performance improvements}. Our evidence for this
-comes from Shardl et al. \cite{}. While some IR optimisations have been
+comes from Shardl et al. \cite{tapir}. While some IR optimisations have been
 implemented, they seem to have significantly more effect on parallel loop code,
 while the tasking code remains relatively unaffected by IR optimizations
-\cite{}. 
+\cite{tapir}. 
 
 There are two cases we'd like to look at using the profiler. The first is a 
 case when there is a large difference in runtime between implementations. For 
@@ -925,11 +928,10 @@ possible, it becomes infeasible.
 
 While OpenMP and Cilk have similar fork-join style semantics that Tapir
 implements naturally, many allow a more flexible mechanism for synchronization:
-futures \cite{qthreads, hpx, chapel, charm++}. The primary difference
-between the fork-join parallelism represented by Tapir and these approaches
-is that \emph{child tasks can outlive their parents}. Figuring out how
-to represent this class of parallelism in Tapir represents a significant
-challenge for future work.
+futures \cite{qthreads, chapel, hpx}. The primary difference between the
+fork-join parallelism represented by Tapir and these approaches is that
+child tasks can outlive their parents. Figuring out how to represent this class
+of parallelism in Tapir represents a significant challenge for future work.
 
 \subsection{Related Work} \label{Sec:Related}
 
@@ -953,9 +955,10 @@ set of intrinsics being added to an already only-partially defined
 in an IR settings, infeasible. 
 
 A third approach is to have a separate instruction set for parallelism. This is
-the approach taken by projects like HPIR \cite{}, SPIRE \cite{}, and INSPIRE
-\cite{}. This approach has the downside of being unable to re-use existing
-optimization and analysis infrastructure of an existing IR. 
+the approach taken by projects like HPIR \cite{zhao2011intermediate}, SPIRE
+\cite{khaldi2012spire}, and INSPIRE \cite{jordan2013inspire}. This approach has
+the downside of being unable to re-use existing optimization and analysis
+infrastructure of an existing IR. 
 
 Finally, the last approach, and that taken by Tapir, is to implement parallel 
 instructions as an extension of an existing IR. This allows for integration
