@@ -122,6 +122,7 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 
 \title{OpenMPIR}
 \subtitle{Implementing OpenMP tasks with Tapir}
+
 \author{George Stelle}
 \affiliation{\institution{Los Alamos National Laboratory}}
 \email{stelleg@lanl.gov}
@@ -981,12 +982,11 @@ literature. As discussed in Section~\ref{Sec:Introduction},
 there have been many programming models for implementing parallel programs. While
 this paper does not take a stance on which one \emph{should} be used, it does
 accept that OpenMP is currently/potentially the most widely used model that has 
-a notion of tasks. \pmnote{but it isn't clear to me that tasks are really being 
-used much! :-)}.  The goal of this work is to show that a single intermediate representation can be
-used to implement multiple programming paradigms with good performance. Schardl et 
-al. showed that Tapir works well as an IR target for Cilk and surmised that it could
-be an effective IR for a large subset of OpenMP \cite{tapir}. This work has
-taken the first step in that direction.
+a notion of tasks. The goal of this work is to show that a single intermediate
+representation can be used to implement multiple programming paradigms with
+good performance. Schardl et al. showed that Tapir works well as an IR target
+for Cilk and surmised that it could be an effective IR for a large subset of
+  OpenMP \cite{tapir}. This work has taken the first step in that direction.
 
 One interesting aspect of this work is that it compiles a language extension intended
 for one runtime (OpenMP) to use another (the Cilk runtime). While in many
