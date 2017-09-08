@@ -361,21 +361,22 @@ void search(int low, int high) {
   \label{fig:search}
 \end{figure}
 
-Consider the first code segment defined in \figref{search}.
+Consider the first code segment defined in~\figref{search}.
 Here, we find a simple OpenMP program which performs a divide-and-conquer search.
 However, as written, there is a simple optimization that can be performed --
 namely, that the value \code{(low+high)/2} may be computed once before either
-parallel task, allowing the program to avoid some redundant computation. On
+parallel task, avoiding redundant computations. For
 the serial version of this program, optimizations like this are performed
 automatically. However, without the use of Tapir, these sorts of optimizations
 are not run on parallel programs.
 
-If one were to compile this program using the traditional technique of converting
-to runtime calls, one would find a program similar to \figref{runtime_calls}.
-The OpenMP pragmas are effectively treated as syntactic sugar for such runtime calls
-because vanilla LLVM has no concise way to represent parallel programs.
-These runtime calls obfuscate the program, making it infeasable to analyze or
-optimize parallel code.
+If one were to compile this program using the traditional technique of lowering 
+\texttt{\#pragma} directives into runtime calls, one would find a program similar 
+to~\figref{runtime_calls}.
+The OpenMP pragmas are effectively treated as syntactic sugar for runtime calls
+because LLVM has no concise way to represent such parallel constructs.
+Importantly, these runtime calls tend to obfuscate the program, making it 
+infeasible to analyze and/or optimize parallel code.
 
 \begin{figure}[t]
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}l@{}l}
@@ -402,17 +403,22 @@ void search(int low, int high) {
 \vspace{0.1ex}
 \end{tabular*}
 
-\caption[Simplified compilation of the unoptimized search code from \figref{search}.]{Simplified compilation of the unoptimized search code from \figref{search}.  \subfigcap{a}~The function \code{search}. The parallel tasks are moved into their own functions and accompanying closures. These functions are then passed to OpenMP runtime calls. This system obfuscates the program, making it infeasable for an optimizer to reason about what is happening.}
+\caption[Simplified compilation of the unoptimized search code from \figref{search}.]
+{Simplified compilation of the unoptimized search code from~\figref{search}.  
+\subfigcap{a}~The function \code{search}. The parallel tasks are moved into their own 
+functions and accompanying closures. These functions are then passed to OpenMP runtime 
+calls. This system obfuscates the program, making it infeasable for an optimizer to 
+reason about what is happening.}
   \label{fig:runtime_calls}
 \end{figure}
 
 \subsection{Tapir Internals}
 Tapir is a compelling solution to this problem because it allows existing
-analysis and optimizations to work on parallel programs without much modification.
+analysis and optimizations to work on parallel programs without significant modifications.
 To properly describe Tapir, one must briefly introduce key aspects of LLVM.
-LLVM represents control flow through a control-flow graph (CFG) of blocks,
-which are sequences of instructions. Blocks always end with terminator instructions
-which define the edges of the control flow graph. For example, \figref{CFG} shows a simple
+LLVM represents expression/evaluation order through a control-flow graph (CFG) of blocks that contain 
+sequences of instructions. Blocks always end with terminator instructions that
+define the edges of the control flow graph. For example, \figref{CFG} shows a simple
 function and its corresponding LLVM code.
 
 \begin{figure*}[h!]
@@ -464,7 +470,7 @@ the conditional branch as it is also a terminator instruction with with two bloc
 However, unlike the conditional branch which denotes a choice between successors, the \code{detach} instruction denotes that its two successors may run in parallel. Semantically,
 the first successor of a \code{detach} instruction is referred to as the \textbf{detached block} and represents a task that can, but is not required to, run in parallel with the
 \textbf{continuation block}, or the second successor to the detach statement. The \code{detach}
-is analagous to a \code{fork} in most fork-join frameworks.
+is analagous to a \code{fork} in most fork-join models.
 
 At the end of any task created by a \code{detach} instruction, one must end with a \code{reattach} instruction to the corresponding continuation block. The \code{reattach} instruction
 is used to denote the end of a parallel task.
@@ -481,7 +487,7 @@ focused on the execution of data parallelism by a cooperating team of threads,
 e.g., dividing the iterations of a loop among the threads. Version 3.0 of the 
 OpenMP API specification introduced support for lightweight asynchronous tasks, 
 designated by the application developer and scheduled onto the team of threads 
-by the OpenMP run time implementation.  The \texttt{task} construct applied to 
+by the OpenMP runtime implementation.  The \texttt{task} construct applied to 
 a structured block of code creates an explicit task, and the \texttt{taskwait} 
 construct waits for completion of all tasks generated by the current task.
 
@@ -539,7 +545,7 @@ a basic framework for asynchronous task parallel execution in OpenMP programs.
 Subsequent versions of the OpenMP specification up to the current version 4.5 
 have added additional new features to the tasking model.  The \texttt{depend} 
 clause codifies data dependences among tasks, indicating that a data location 
-is an input or output of a task.  The run time system ensures that a task is 
+is an input or output of a task.  The runtime system ensures that a task is 
 not scheduled until its input dependences are fulfilled.  The \texttt{taskloop} 
 construct combines groups of independent loop iterations into explicit tasks, 
 enabling composition of concurrent loop execution and independent explicit 
@@ -628,7 +634,7 @@ paper is tagged as LLVM17.
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
-\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{fig:Example}
+\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{fig:tapir-example}
 we show what Tapir code is generated.  
 
 \begin{figure*}
@@ -677,12 +683,11 @@ det.achd1:
 det.cont4:                                  
   sync label %sync.continue
 \end{lstlisting}
- &  \\
+ & \\
 \hline
 \end{tabular}
-
-\caption{Compilation to Tapir}
-\label{fig:Example}
+\caption{Transformation from OpenMP task constructs to Tapir.}
+\label{fig:tapir-example}
 \end{figure*}
 
 The listed Tapir LLVM IR code corresponds to lines 7 through 12 of the C source
@@ -692,7 +697,7 @@ the basic block corresponding to the call to \texttt{fib(n-1)}, labeled
 detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
 Finally, the continuation for the second call immediately calls sync. This is
 actually a nice example of code that will be optimized by Tapir. The LLVM code
-shown in Figure~\ref{Fig:Example} is not optimized. With optimizataions turned
+shown in Figure~\ref{Fig:tapir-example} is not optimized. With optimizataions turned
 on, Tapir will replace a \texttt{detach} of a function call followed
 immediately by \texttt{sync} with a simple function call, resulting in faster
 code. 
