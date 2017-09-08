@@ -181,18 +181,18 @@ Compilers implement the majority of their analyses and optimizations on
 intermediate representations \textbf{(IRs)} which allow such transformations
 to be written once with relative ease and apply to a variety of source
 front-end languages such as C or C++.  Historically, the IR of mainstream
-compilers such as LLVM~\cite{llvm} or GCC's Gimple~\cite{} haven't suppored
-parallel constructs. As a consequence, compilers utilizing these IRs haven't
-had the ability to reason about parallelism. The recent work of Schardl et
-al.~\cite{tapir} has shown that the LLVM IR can be extended to represent
-fork-join parallelism without requiring a major rewrite.  They did so by
-extending the LLVM instruction set with three instructions capable of
-representing fork-join parallelism. To benchmark performance and test accuracy,
-they wrote a frontend which translated programs written with Cilk, a parallel
-programming model for C/C++, into the Tapir IR. They also implemented a backend
-to \textbf{lower} Tapir programs to vanilla LLVM IR with embedded Cilk runtime
-calls. They suggested that a similar approach could be taken with OpenMP and
-other such frameworks.
+compilers such as LLVM~\cite{lattner2004llvm} or GCC's
+Gimple~\cite{merrill2003generic} haven't suppored parallel constructs. As a
+consequence, compilers utilizing these IRs haven't had the ability to reason
+about parallelism. The recent work of Schardl et al.~\cite{tapir} has shown
+that the LLVM IR can be extended to represent fork-join parallelism without
+requiring a major rewrite.  They did so by extending the LLVM instruction set
+with three instructions capable of representing fork-join parallelism. To
+benchmark performance and test accuracy, they wrote a frontend which translated
+programs written with Cilk, a parallel programming model for C/C++, into the
+Tapir IR. They also implemented a backend to \textbf{lower} Tapir programs to
+vanilla LLVM IR with embedded Cilk runtime calls. They suggested that a similar
+approach could be taken with OpenMP and other such frameworks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This allows us to both analyze and optimize
@@ -268,18 +268,18 @@ be found in the OpenMP specification~\cite{openmp}.
 
 In this section we further discuss a significant challenge in HPC:
 fragmentation of parallel programming models. There are many ways to write
-parallel programs~\cite{openmp, qthreads, chapel, cilk, kokkos, legion, upc, mpi}
-\pmnote{I would add MPI and UPC/PGAS here too}. From libraries, to language
-extensions, to standalone languages, to combinations of the above,
-fragmentation of parallel programming models is a problem that is only getting
-worse. This means that when writing tooling, optimizations, or analyses, one
-has to choose which model to target as well as understand points of contention
-and interoperability between them. A common difficulty among all of these is
-that reasoning about parallel programs is hard and compilers can potentially
-help reduce this burden. This is exactly analogous the problem LLVM solves:
-compiler optimizations are hard, so sharing them is valuable. Tapir is a
-demonstration that the the LLVM approach to compilation of serial code can be
-effectively extended to help reason about parallel code. 
+parallel programs~\cite{openmp, qthreads, chapel, cilk, kokkos, legion, upc,
+mpi} . From libraries, to language extensions, to standalone languages, to
+combinations of the above, fragmentation of parallel programming models is a
+problem that is only getting worse. This means that when writing tooling,
+optimizations, or analyses, one has to choose which model to target as well as
+understand points of contention and interoperability between them. A common
+difficulty among all of these is that reasoning about parallel programs is hard
+and compilers can potentially help reduce this burden. This is exactly
+analogous the problem LLVM solves: compiler optimizations are hard, so sharing
+them is valuable. Tapir is a demonstration that the the LLVM approach to
+compilation of serial code can be effectively extended to help reason about
+parallel code. 
 
 With fragmentation comes questions of compatibility, or composability, of 
 different programming models. To illustrate this issue, consider the example of
@@ -637,30 +637,20 @@ paper is tagged as LLVM17.
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
-\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{tapir-example}
-we show the input OpenMP program and a portion of the corresponding Tapir code 
-that is generated.  
+parallel fragment of the \texttt{fib} example from Section~\ref{Sec:OpenMP}. In
+Figure~\ref{Fig:Example} we show what the input OpenMP code and the Tapir code
+is generated.
 
 \begin{figure*}
 \begin{tabular}{| c c c | c c c |}
 \hline
  & 
 \begin{lstlisting}
-int fib(int n) 
-{                    // A
-  if (n < 2)
-    return n;
-  else
-  {
-    int x, y;
-    #pragma omp task
-      x = fib(n-1);  // B
-    #pragma omp task
-      y = fib(n-2);  // C
-    #pragma omp taskwait
-    return (x+y);    // D
-  }
-}
+  #pragma omp task
+    x = fib(n-1);  
+  #pragma omp task
+    y = fib(n-2);  
+  #pragma omp taskwait
 \end{lstlisting}
 & & &
 \begin{lstlisting}[language=llvm]
@@ -694,9 +684,8 @@ det.cont4:
 \label{fig:tapir-example}
 \end{figure*}
 
-The listed Tapir IR code corresponds to lines 7 through 12 of the C source
-code.  Upon entering the \texttt{else} branch, the code immediately detaches
-the basic block corresponding to the call to \texttt{fib(n-1)}, labeled
+Upon entering the \texttt{else} branch, the code immediately detaches the basic
+block corresponding to the call to \texttt{fib(n-1)}, labeled
 \texttt{det.achd}. The continuation for the first call also immediately
 detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
 Finally, the continuation for the second call immediately calls sync. This is
@@ -943,10 +932,9 @@ importance of optimizations of parallel code is clear, we hypothesize that most
 of the disparity present in these results is a function of runtime
 implementation differences. As justification for this hypothesis, consider
 the \texttt{Fibonacci} benchmark. There are no memory accesses to the heap, 
-and the code leaves little room for optimization, algorithmic changes
-notwithstanding. In other words, it is effectively a benchmark of how fast a
-runtime can execute fork-join parallelism. \gsnote{still worth looking into the
-optimization I mention in the implemtnation section.}
+and the code leaves little room for optimization (algorithmic rewrites
+notwithstanding). In other words, it is effectively a benchmark of how fast a
+runtime can execute fork-join parallelism .
 
 %\wmnote{So actually the memory accesses are happily an optimization Tapir does
 %-- mainly some mem2reg optimization that may not make much of a different
@@ -1080,7 +1068,12 @@ fork-join parallelism represented by Tapir and these approaches is that
 child tasks can outlive their parents. Figuring out how to represent this class
 of parallelism in Tapir represents a significant challenge for future work.
 
-A seperate but related area in LLVM extensions is the area of using memory 
+One interesting area for future work would be combining Tapir with work on
+reasoning about locality in LLVM. For example, Hayashi et al.
+\cite{hayashi2015llvm} use address spaces in LLVM to reason about memory
+locality in partitioned global address space (PGAS) systems. By combining
+reasoning about code concurrency and locality, one could potentially apply
+optimizations to better schedule and co-locate code and data.
 
 \subsection{Related Work} \label{Sec:Related}
 
