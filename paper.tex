@@ -638,7 +638,8 @@ paper is tagged as LLVM17.
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
 \texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{tapir-example}
-we show what Tapir code is generated.  
+we show the input OpenMP program and a portion of the corresponding Tapir code 
+that is generated.  
 
 \begin{figure*}
 \begin{tabular}{| c c c | c c c |}
@@ -693,29 +694,29 @@ det.cont4:
 \label{fig:tapir-example}
 \end{figure*}
 
-The listed Tapir LLVM IR code corresponds to lines 7 through 12 of the C source
+The listed Tapir IR code corresponds to lines 7 through 12 of the C source
 code.  Upon entering the \texttt{else} branch, the code immediately detaches
 the basic block corresponding to the call to \texttt{fib(n-1)}, labeled
 \texttt{det.achd}. The continuation for the first call also immediately
 detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
 Finally, the continuation for the second call immediately calls sync. This is
 actually a nice example of code that will be optimized by Tapir. The LLVM code
-shown in Figure~\ref{tapir-example} is not optimized. With optimizataions turned
+shown in \figref{tapir-example} is not optimized. With optimizataions turned
 on, Tapir will replace a \texttt{detach} of a function call followed
 immediately by \texttt{sync} with a simple function call, resulting in faster
 code. 
 
 \section{Evaluation} \label{Sec:Evaluation}
 
-For evaluation we compared performance on the Barcelona OpenMP task suite
-\cite{barcelona} to existing OpenMP implementations. The Barcelona OpenMP task
-suite is a set of tests intended to test performance of OpenMP implementations
-using both irregular and regular tasking. The benchmark suite has added an
-unbalanced tree search benchmark since the paper was published. Unfortunately
-we were unable to succesfully run it on any implementation, even for even
-medium input sizes. We have therefore left it out of our evaluation. The
-following descriptions are abridged versions taken verbatim from
-\cite{barcelona}:
+For evaluating the use of Tapir we compared performance on the Barcelona OpenMP Task 
+Suite~\cite{barcelona} to several existing OpenMP implementations. The suite is a set 
+of tests intended to test performance of OpenMP implementations
+using both irregular and regular tasking.\footnote{An unbalanced tree search benchmark was
+very recently added to the suite. Unfortunately we were unable to succesfully run 
+it on any implementation, even for even medium input sizes. We have therefore left 
+it out of our evaluation.  We will continue to work on this benchmark and will 
+include the results if the paper is accepted to the workshop.} The following list provides abridged descriptions of 
+each benchmark -- they are taken verbatim from~\cite{barcelona}:
 
 \begin{itemize}
 \item \texttt{Alignment}: aligns all protein sequences from  an  input
