@@ -156,23 +156,26 @@ these existing implementations.
  
 When writing task-parallel programs today, one has a large selection of
 potential programming models and implementations to consider. Unfortunately, 
-despite having some significant overlaps in semantics, parallel programming models 
-such as OpenMP\cite{}, Cilk\cite{},Kokkos\cite{}, HPX\cite{}, Charm++\cite{},
-Qthreads\cite{}, pthreads\cite{}, MPI\cite{}, Chapel\cite{}, UPC\cite{},
-among others have limited ability to interoperate either at the level of 
-compile-time analysis or at run-time execution.
-\wmnote{Not sure if relevant, but there was some experiment run a while back of someone composing a library that internally used OpenMP
-with another framework that had terribly results compared with either used alone.} 
-\gsnote{Hmm. A quick googling turned up a project out of berkeley combining OpenMP and TBB, 
-but performance didn't seem too bad. I'll take another look tomorrow.}
-In addition, many of these programming models are implemented as runtime libraries with only
-primitive compiler support. As a result, most are not able to take advantage of the compiler's 
-analysis and optimization capabilities.
-While there has been some recent work on specializing compilers to reason
-about parallel programming libraries~\cite{Moss_2016}, fragmentation among
-models presents a significant challenge for compiler writers, which must choose
-a single model, or multiple intermediate forms, to use for analysis and optimization. An ideal 
-solution would be a form of common representation of parallel semantics and constructs.
+despite having some significant overlaps in semantics, parallel programming
+models such as OpenMP~\cite{openmp}, Cilk~\cite{cilk}, Kokkos~\cite{kokkos},
+HPX~\cite{hpx}, Charm++~\cite{charm}, Qthreads~\cite{qthreads},
+pthreads\cite{pthreads}, MPI~\cite{mpi}, Chapel~\cite{chapel}, UPC~\cite{upc},
+OpenCL~\cite{opencl}, OpenACC~\cite{openacc} among others have limited ability to
+interoperate either at the level of compile-time analysis or at run-time
+execution.  \wmnote{Not sure if relevant, but there was some experiment run a
+while back of someone composing a library that internally used OpenMP with
+another framework that had terribly results compared with either used alone.}
+\gsnote{Hmm. A quick googling turned up a project out of berkeley combining
+OpenMP and TBB, but performance didn't seem too bad. I'll take another look
+tomorrow.} In addition, many of these programming models are implemented as
+runtime libraries with only primitive compiler support. As a result, most are
+not able to take advantage of the compiler's analysis and optimization
+capabilities.  While there has been some recent work on specializing
+compilers to reason about parallel programming libraries~\cite{Moss_2016},
+fragmentation among models presents a significant challenge for compiler
+writers, which must choose a single model, or multiple intermediate forms, to
+use for analysis and optimization. An ideal solution would be a form of
+common representation of parallel semantics and constructs.
 
 Compilers implement the majority of their analyses and optimizations on
 intermediate representations \textbf{(IRs)} which allow such transformations
@@ -259,24 +262,24 @@ large and complex specification for parallelism. This paper focuses on a
 relatively recent addition to the OpenMP specification: the \texttt{task}
 and \texttt{taskwait} constructs. A detailed description of these constructs
 is presented in Section~\ref{Sec:OpenMP} and a more complete description can 
-be found in the OpenMP specification~\cite{spec}.
+be found in the OpenMP specification~\cite{openmp}.
 
 \subsection{Fragmentation}
 
 In this section we further discuss a significant challenge in HPC:
 fragmentation of parallel programming models. There are many ways to write
-parallel programs~\cite{spec, qthreads, chapel, cilk, kokkos, legion} \pmnote{I
-would add MPI and UPC/PGAS here too}. From
-libraries, to language extensions, to standalone languages, to combinations of
-the above, fragmentation of parallel programming models is a problem that is
-only getting worse. This means that when writing tooling, optimizations, or
-analyses, one has to choose which model to target as well as understand points
-of contention and interoperability between them. A common difficulty among
-all of these is that reasoning about parallel programs is hard and compilers
-can potentially help reduce this burden. This is exactly analogous the problem 
-LLVM solves: compiler optimizations are hard, so sharing them is valuable. Tapir 
-is a demonstration that the the LLVM approach to compilation of serial code can 
-be effectively extended to help reason about parallel code. 
+parallel programs~\cite{openmp, qthreads, chapel, cilk, kokkos, legion, upc, mpi}
+\pmnote{I would add MPI and UPC/PGAS here too}. From libraries, to language
+extensions, to standalone languages, to combinations of the above,
+fragmentation of parallel programming models is a problem that is only getting
+worse. This means that when writing tooling, optimizations, or analyses, one
+has to choose which model to target as well as understand points of contention
+and interoperability between them. A common difficulty among all of these is
+that reasoning about parallel programs is hard and compilers can potentially
+help reduce this burden. This is exactly analogous the problem LLVM solves:
+compiler optimizations are hard, so sharing them is valuable. Tapir is a
+demonstration that the the LLVM approach to compilation of serial code can be
+effectively extended to help reason about parallel code. 
 
 With fragmentation comes questions of compatibility, or composability, of 
 different programming models. To illustrate this issue, consider the example of
@@ -476,7 +479,7 @@ instruction is analagous to a \code{join} in most fork-join frameworks.
 
 \section{OpenMP Tasks} \label{Sec:OpenMP}
 
-Initially, the cross-vendor OpenMP~\cite{spec} shared memory programming model 
+Initially, the cross-vendor OpenMP~\cite{openmp} shared memory programming model 
 focused on the execution of data parallelism by a cooperating team of threads, 
 e.g., dividing the iterations of a loop among the threads. Version 3.0 of the 
 OpenMP API specification introduced support for lightweight asynchronous tasks, 
@@ -1071,6 +1074,8 @@ futures \cite{qthreads, chapel, hpx}. The primary difference between the
 fork-join parallelism represented by Tapir and these approaches is that
 child tasks can outlive their parents. Figuring out how to represent this class
 of parallelism in Tapir represents a significant challenge for future work.
+
+A seperate but related area in LLVM extensions is the area of using memory 
 
 \subsection{Related Work} \label{Sec:Related}
 
