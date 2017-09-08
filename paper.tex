@@ -637,7 +637,7 @@ paper is tagged as LLVM17.
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
-\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{fig:tapir-example}
+\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{tapir-example}
 we show what Tapir code is generated.  
 
 \begin{figure*}
@@ -700,7 +700,7 @@ the basic block corresponding to the call to \texttt{fib(n-1)}, labeled
 detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
 Finally, the continuation for the second call immediately calls sync. This is
 actually a nice example of code that will be optimized by Tapir. The LLVM code
-shown in Figure~\ref{Fig:tapir-example} is not optimized. With optimizataions turned
+shown in Figure~\ref{tapir-example} is not optimized. With optimizataions turned
 on, Tapir will replace a \texttt{detach} of a function call followed
 immediately by \texttt{sync} with a simple function call, resulting in faster
 code. 
