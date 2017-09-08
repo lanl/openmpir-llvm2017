@@ -981,34 +981,33 @@ size of the work chunks, for \texttt{clang} and \texttt{icc} it is
 significantly larger, and for \texttt{gcc} it is overwhelming.
 
 For the cases where performance is close between the implementations, like
-\texttt{sparselu}, we expect runtimes to be dominated by actual task work. This 
-expectation is confirmed by investigating performance counters for \texttt{sparselu}:
-every implementation spends roughly 90\% of it's time doing work in the task
+\texttt{sparselu}, we expect runtimes to be dominated by actual task workloads. This 
+expectation is confirmed by investigating performance counters for \texttt{sparselu}
+where every implementation spends roughly 90\% of it's time in the task
 bodies. 
 
 \section{Discussion} \label{Sec:Discussion}
 
-In this section we discuss the relevance of the results and this work in general
-in the context of the literature. As discussed in Section~\ref{Sec:Introduction}, 
+In this section we discuss the relevance of the results and in the context of the
+literature. As discussed in Section~\ref{Sec:Introduction}, 
 there have been many programming models for implementing parallel programs. While
 this paper does not take a stance on which one \emph{should} be used, it does
-accept that OpenMP is currently a widely used model, potentially the most
-widely used model that has a notion of tasks. 
-
-The goal of this work is to show that a single intermediate representation can be
-used to implement multiple programming models, with good performance. Schardl et 
-al. showed that Tapir works well as an IR for Cilk, and surmised that it could
+accept that OpenMP is currently/potentially the most widely used model that has 
+a notion of tasks. \pmnote{but it isn't clear to me that tasks are really being 
+used much! :-)}.  The goal of this work is to show that a single intermediate representation can be
+used to implement multiple programming paradigms with good performance. Schardl et 
+al. showed that Tapir works well as an IR target for Cilk and surmised that it could
 be an effective IR for a large subset of OpenMP \cite{tapir}. This work has
-taken the first step in that direction, showing that it can work well as an IR
-for OpenMP tasks. 
+taken the first step in that direction.
 
 One interesting aspect of this work is that it compiles a language extension intended
-for one runtime (OpenMP runtimes) to use another (the Cilk runtime). While in many
-ways this is a weakness of this work, it does open the possibility of doing this 
-in a general way. Having a real IR to work with enables, in the same way that LLVM
-does for serial code, the possibility of multiple input parallel languages and
-multiple output parallel runtimes. While the OpenMP spec's requirement to
-have access to runtime routines complicates things, for many programming models
+for one runtime (OpenMP) to use another (the Cilk runtime). While in many
+ways this is a weakness of this work, it does open the possibility of utilizing this 
+in a more general way to address many aspects including significant challenges 
+such as performance portability. Having a parallel-aware IR to work with enables, 
+in the same way that LLVM does for serial code, the possibility of multiple high-level 
+parallel languages and multiple parallel runtime targets. While the OpenMP specification's 
+requirement to have access to runtime routines complicates things, for many programming models
 it seems at least conceivable to map them onto multiple different runtimes. This
 opens the possibility of mixing programming models at compile time by targeting
 the same runtime. For example, if both OpenMP and Cilk targeted Tapir
@@ -1019,13 +1018,13 @@ incompatibility problems often seen today.
 The surprising fact that program behaviour wasn't changed significantly is
 worth discussing here. We surmise that it is likely due to the variable
 semantics borrowed from the Cilk codegen and their relation to the OpenMP
-specification of semantics. In particular, \emph{OpenMP doesn't specify any
+specification of semantics. In particular, \emph{OpenMP doesn't specify a
 memory model for shared variables}. This results in the Cilk style of only
 writing to a shared variable at the end of a parallel section as a perfectly
 valid implementation of OpenMP's specification. In contrast, existing OpenMP
 implementations often write to shared variables on every write. This is a
 potential for performance discrepancy due to differing implementation-defined
-behaviour, and we will return to it when discussing performance on the
+behaviour and we will return to it when discussing performance on the
 Barcelona OpenMP task suite. There is of course the fact that technically, by
 copying the value of variables back to the surrounding context even for
 \texttt{private} variables, one isn't following the specification. We surmise
@@ -1138,7 +1137,6 @@ Sandia National Laboratories is a multimission laboratory managed and operated
 by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA-0003525.
-
 
 This work was supported by the Director, Office of Advanced Scientific
 Computing Research, Office of Science, of the United States Department
