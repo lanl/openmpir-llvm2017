@@ -637,10 +637,10 @@ parallel fragment of the \texttt{fib} example from Section~\ref{Sec:OpenMP}. In
 Figure~\ref{fig:tapir-example} we show what the input OpenMP code and the Tapir code
 is generated.
 
-\begin{figure*}
-\begin{tabular}{| c c c | c c c |}
-\hline
- & 
+\begin{figure*}[h!]
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ll}
+\subfiglabel{a} & \subfiglabel{b} \\
+\begin{minipage}[T]{0.45\linewidth}
 \begin{lstlisting}
   #pragma omp task
     x = fib(n-1);  
@@ -648,7 +648,9 @@ is generated.
     y = fib(n-2);  
   #pragma omp taskwait
 \end{lstlisting}
-& & &
+\end{minipage}
+&
+\begin{minipage}[T]{0.45\linewidth}
 \begin{lstlisting}[language=llvm]
 if.end:                                 
   detach label %det.achd, label %det.cont
@@ -673,9 +675,10 @@ det.achd1:
 det.cont4:                                  
   sync label %sync.continue
 \end{lstlisting}
- & \\
-\hline
-\end{tabular}
+\end{minipage}\\
+\addlinespace[2ex]
+\bottomrule
+\end{tabular*}
 \caption{Transformation from OpenMP task constructs to Tapir.}
 \label{fig:tapir-example}
 \end{figure*}
