@@ -160,7 +160,9 @@ Qthreads\cite{}, pthreads\cite{}, MPI\cite{}, Chapel\cite{}, UPC\cite{},
 among others have virtually no ability to interoperate either at compile
 time or run time.
 \wmnote{Not sure if relevant, but there was some experiment run a while back of someone composing a library that internally used OpenMP
-with another framework that had terribly results compared with either used alone.}
+with another framework that had terribly results compared with either used alone.} 
+\gsnote{Hmm. A quick googling turned up a project out of berkeley combining OpenMP and TBB, 
+but performance didn't seem too bad. I'll take another look tomorrow.}
 Many of these programming models are implemented as runtime libraries with only
 primitive compiler support. As a result, most of these parallel frameworks
 aren't able to take advantage of the compiler's analysis and optimizations.
@@ -236,10 +238,6 @@ multiple frontends for different source languages, and multiple backends for
 different hardware, to all take advantage of a series of compiler optimizations
 and analyses. 
 
-\gsnote{I wanted to give a brief nod to the importance of LLVM, given the venue
-(LLVM in HPC). Is this any more satisfactory?}
-\wmnote{It still feels like we're trying to advocate for LLVM. I'd prefer some
-more objective-sounding language like perhaps the one below.}
 LLVM has gained traction in the academic community for its simplicity,
 relatively painless modification, and extensibility\cite{lattner2004llvm}.
 Historically, LLVM has had a sequential semantics: there is no explicit notion
@@ -365,7 +363,7 @@ If one were to compile this program using the traditional technique of convertin
 to runtime calls, one would find a program similar to \figref{runtime_calls}.
 The OpenMP pragmas are effectively treated as syntactic sugar for such runtime calls
 because vanilla LLVM has no concise way to represent parallel programs.
-These runtime calls obfuscate the program, making it impossible to analyze or
+These runtime calls obfuscate the program, making it infeasable to analyze or
 optimize parallel code.
 
 \begin{figure}[t]
@@ -393,7 +391,7 @@ void search(int low, int high) {
 \vspace{0.1ex}
 \end{tabular*}
 
-\caption[Simplified compilation of the unoptimized search code from \figref{search}.]{Simplified compilation of the unoptimized search code from \figref{search}.  \subfigcap{a}~The function \code{search}. The parallel tasks are moved into their own functions and accompanying closures. These functions are then passed to OpenMP runtime calls. This system obfuscates the program, making it impossible for an optimizer to reason about what is happening.}
+\caption[Simplified compilation of the unoptimized search code from \figref{search}.]{Simplified compilation of the unoptimized search code from \figref{search}.  \subfigcap{a}~The function \code{search}. The parallel tasks are moved into their own functions and accompanying closures. These functions are then passed to OpenMP runtime calls. This system obfuscates the program, making it infeasable for an optimizer to reason about what is happening.}
   \label{fig:runtime_calls}
 \end{figure}
 
@@ -924,23 +922,26 @@ only performance counter information. A more thorough investigation would
 require deep knowledge of each of the frontends and runtimes. While the
 importance of optimizations of parallel code is clear, we hypothesize that most
 of the disparity present in these results is a function of runtime
-implementation differences. Our evidence for this comes from Schardl et al.
-\cite{tapir}. Generally, the effect of the optimizations that have been
-implemented for Tapir IR are outweighed by runtime contention, memory accesses,
-etc. for parallel runs. \gsnote{Billy, this OK? Don't want to sound too
-negative about the importance of the optimizations you've implemented.}
-\wmnote{So actually the memory accesses are happily an optimization Tapir does
--- mainly some mem2reg optimization that may not make much of a different (though still something)
-on one core, is a lot more impactful on multicores because of issues regarding contention
-forcing a cache line flush.
-Also I'm not convinced there wasn't an impact on FFT/nqueens because we did see a
-decent improvement from tapir on that -- though I wouldn't be suprised to see the runtime
-contribute a large chunk of that, especially for nqueens because that seems like a much
-larger improvement than the serial optimizations applied to parallel program alone (when we tested).
-Fibonacci is certainly runtime based because there's basically no work inside of
-it so its almost entirely a measurement of the runtime efficiency.
-Sort I'm not sure on depending on the implementation
-}
+implementation differences. As justification for this hypothesis, consider
+the \texttt{Fibonacci} benchmark. There are no memory accesses to the heap, 
+and the code leaves little room for optimization, algorithmic changes
+notwithstanding. In other words, it is effectively a benchmark of how fast a
+runtime can execute fork-join parallelism. \gsnote{still worth looking into the
+optimization I mention in the implemtnation section.}
+
+%\wmnote{So actually the memory accesses are happily an optimization Tapir does
+%-- mainly some mem2reg optimization that may not make much of a different
+%(though still something) on one core, is a lot more impactful on multicores
+%because of issues regarding contention forcing a cache line flush.  Also I'm
+%not convinced there wasn't an impact on FFT/nqueens because we did see a decent
+%improvement from tapir on that -- though I wouldn't be suprised to see the
+%runtime contribute a large chunk of that, especially for nqueens because that
+%seems like a much larger improvement than the serial optimizations applied to
+%parallel program alone (when we tested).  Fibonacci is certainly runtime based
+%because there's basically no work inside of it so its almost entirely a
+%measurement of the runtime efficiency.  Sort I'm not sure on depending on the
+%implementation
+%}
 
 There are two cases we'd like to look at using the profiler. The first is a 
 case when there is a large difference in runtime between implementations. For 
