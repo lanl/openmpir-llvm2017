@@ -878,20 +878,19 @@ implementations.
 \label{Fig:results2}
 \end{figure*}
 
-As mentioned earlier on \texttt{Floorplan} our implementation was sometimes
-giving incorrect results. It is difficult to tell, but the time to completion
-is non-zero. In fact, while ICC and Clang finished in roughly 1-2 seconds, the
-our Tapir implementation was finishing in 0.02 seconds, and computing the
-correct result roughly half the time. This raises interesting questions on the
-cost/benefit relation of the OpenMP behaviour that our implementation is
-missing. We'll discuss this further in Section~\ref{Sec:Discussion}.
+As mentioned earlier on \texttt{Floorplan} our implementation returned correct
+results nondeterministically due to not having an implementation of the OpenMP
+\texttt{critical} and \texttt{atomic} pragmas. While ICC and Clang finished in
+roughly 1-2 seconds, the Tapir implementation was finishing in 0.02 seconds,
+and computing the correct result roughly half the time. This raises interesting
+questions on the cost/benefit relation of the missing OpenMP pragmas.
 
 GCC was the only culprit for timeouts. Recall that the timeout was set at 10
 minutes, so any timeout means GCC was running at least approximately 60 times
 slower than the fastest implementation. For example, on the \texttt{FFT}
 benchmark, while our Tapir implementation was running in under 5 seconds, the
 GCC implementation was timing out at 600 seconds, so was at least 100 times
-slower. We've left GCC results off of the graphs for the three failure cases, 
+slower. We've left GCC results off of the graphs for the three timeout cases,
 \texttt{FFT}, \texttt{Fibonacci}, and \texttt{NQueens}.
 
 Putting failures aside, performance for our implementation is quite strong,
