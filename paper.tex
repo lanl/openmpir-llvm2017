@@ -901,34 +901,30 @@ slower. We've left GCC results off of the graphs for the three timeout cases,
 
 Putting failures aside, performance for our implementation is quite strong,
 generally outperforming or matching the best of existing implementations. For
-benchmarks where the overhead to work ratio is high is where the Tapir
-implementation really shines. For example, for the \texttt{Fibonacci}
+benchmarks where the overhead-to-work ratio is high is where the Tapir (and 
+Cilk) implementation shows significant benefit. For example, for the \texttt{Fibonacci}
 benchmark, our implementation finishes significantly faster than any of the
 others. While ICC failed for that sized input, we did test with smaller inputs
-and found its similarly outpaced by the Tapir implementation.  \texttt{NQueens}
+and found it was similarly outpaced by the Tapir implementation.  \texttt{NQueens}
 and \texttt{FFT} show similar behaviour, to lesser degrees. In contrast,
 benchmarks that have a lower overhead to work ratio unsurprisingly differ less
 in performance. For example,  
 
 \subsection{Profiling}
 
-In this section we attempt to understand \emph{why} the performance varies in
-the ways it does. While we can't hope to figure out every discrepancy in
-performance, we can hope to get some ideas for why the performance of our
-implementation is generally better, and where each of the implementations is
-spending its time.
-
-Our primary tool for this task will be performance counters. It's worth noting
-that some information is difficult to infer from performance counters, such as
-sources of contention in runtimes, reasons for memory locality issues, etc.
-Still, it will give us some insight into performance bottlenecks.
+In this section we speculate \emph{why} the performance varies in
+the ways it does. While we have yet to figure out every discrepancy in
+performance, we hope to get some ideas for why the performance of our
+implementation is generally better and where each of the implementations are
+spending a majority of the time. Our primary tool for this task will be performance 
+counters. It's worth noting that some information is difficult to infer from 
+performance counters, such as sources of contention, reasons for memory locality 
+issues, etc. Still, they do give us some insight into performance bottlenecks.
 
 Before we begin understanding why, it's worth noting again that the scope of the 
 work that this paper is responsible for is only the frontend. All performance
 gains due to the existing Tapir backend and Cilk runtime we sadly cannot claim
-credit for. 
-
-We can break reasons for performance discrepancies into a few categories: 
+credit for. We can break reasons for performance discrepancies into a few categories: 
 
 \begin{itemize}
 \item Front-end code generation
@@ -940,10 +936,10 @@ While we would like to distinguish between these, it is difficult to do so with
 only performance counter information. A more thorough investigation would
 require deep knowledge of each of the frontends and runtimes. While the
 importance of optimizations of parallel code is clear, we hypothesize that most
-of the disparity present in these results is a function of runtime
+of the disparity present in these results is more a function of runtime
 implementation differences. As justification for this hypothesis, consider
 the \texttt{Fibonacci} benchmark. There are no memory accesses to the heap, 
-and the code leaves little room for optimization, algorithmic changes
+and the code leaves little room for optimization --- algorithmic changes
 notwithstanding. In other words, it is effectively a benchmark of how fast a
 runtime can execute fork-join parallelism. \gsnote{still worth looking into the
 optimization I mention in the implemtnation section.}
@@ -980,11 +976,11 @@ according to the Linux \texttt{perf} tool:
 \end{itemize}
 
 This supports our hypothesis that most of the slowdown incurred is overhead in
-the runtime. For \texttt{tapir}, the overhead is relatively small given the
+the runtime. For Tapir the overhead is relatively small given the
 size of the work chunks, for \texttt{clang} and \texttt{icc} it is
-significantly larger, while for \texttt{gcc} it is completely overwhelming.
+significantly larger, and for \texttt{gcc} it is overwhelming.
 
-For the cases where performance is close between implementations, like
+For the cases where performance is close between the implementations, like
 \texttt{sparselu}, we expect runtimes to be dominated by actual task work. This 
 expectation is confirmed by investigating performance counters for \texttt{sparselu}:
 every implementation spends roughly 90\% of it's time doing work in the task
