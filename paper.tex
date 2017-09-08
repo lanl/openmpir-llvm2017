@@ -141,13 +141,14 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 
 \begin{abstract}
 Optimizing compilers for task-level parallelism are still in their infancy.
-This work explores a compiler front end that translates OpenMP tasking semantics to Tapir,
-an extension to LLVM IR that represents fork-join parallelism. This enables
-analyses and optimizations that were previously inaccessible to OpenMP codes,
-as well as the ability to target additional runtimes at code generation. Using
-a Cilk runtime back end, we compare results to existing OpenMP implementations.
-Initial performance results for the Barcelona OpenMP tasking suite show
-performance improvements over existing implementations.
+This work explores a compiler front end that translates OpenMP tasking
+semantics to Tapir, an extension to LLVM IR that represents fork-join
+parallelism. This enables analyses and optimizations that were previously
+inaccessible to OpenMP codes, as well as the ability to target additional
+runtimes at code generation. Using a Cilk runtime back end, we compare results
+to existing OpenMP implementations.  Initial performance results for the
+Barcelona OpenMP task suite show performance improvements over existing
+implementations.
 \end{abstract}
 
 \maketitle
@@ -288,13 +289,13 @@ a program using a library that uses OpenMP to implement parallelism internally.
 If this program uses a different programming model for parallelism, e.g.\ Cilk,
 there is currently no good solution for ensuring that the two different back ends
 will cooperate with management of hardware resources. 
-%
+
 Addressing these concerns is a major motivation for our use of Tapir.  By
 standardizing an IR, in addition to easing the development of optimizations,
 one avoids duplicating work across different implementations. It also enables
 the possibility of multiple programming models coexisting peacefully. We will
-return to this consideration later in Section~\ref{Sec:Discussion} when discussing
-future work.
+return to this consideration later in Section~\ref{Sec:Discussion} when
+discussing future work.
 
 \section{Tapir} \label{Sec:Tapir}
 Tapir is an extension to LLVM proposed by Schardl, Moses, and Leiserson
@@ -302,13 +303,12 @@ seeking to resolve issues in optimizing parallel code. Prior to
 the introduction of Tapir compilers would represent parallel programs
 by directly translating their syntax to opaque runtime calls. This allowed
 compilers to support parallel programs but meant that traditional 
-optimizations such as code motion~\cite{} or common-subexpression elimination~\cite{}
-weren't able to reason about parallel programs. This often led to parallel
-programs running significantly slower than expected. In the Tapir project
-the authors show that it is possible to represent and optimize fork-join
-parallel programs with relatively minimal modifications to the compiler, namely
-the introduction of three instructions designed to interface well with an
-existing compiler.
+optimizations such as code motion or common-subexpression elimination weren't
+able to reason about parallel programs. This often led to parallel programs
+running significantly slower than expected. In the Tapir project the authors
+show that it is possible to represent and optimize fork-join parallel programs
+with relatively minimal modifications to the compiler, namely the introduction
+of three instructions designed to interface well with an existing compiler.
 
 \subsection{Compilation without Tapir}
 
