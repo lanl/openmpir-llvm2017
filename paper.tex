@@ -1,6 +1,7 @@
 \documentclass[sigconf]{acmart}
 \newcommand{\wmnote}[1]{{\scriptsize \color{red} [[ Billy: #1]]}}
 \newcommand{\gsnote}[1]{{\scriptsize \color{blue} [[ George: #1]]}}
+\newcommand{\pmnote}[1]{{\scriptsize \color{magenta} [[ Pat: #1]]}}
 
 \usepackage{booktabs} % For formal tables
 \usepackage{multicol}
@@ -138,14 +139,15 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 \email{pat@lanl.gov}
 
 \begin{abstract}
+\pmnote{Overhauled this some -- take a look...}
 Optimizing compilers for task-level parallelism are still in their infancy.
-This work implements a frontend which compiles a subset of OpenMP tasks to
-Tapir, an extension to LLVM that represents fork-join parallelism. This enables
-analyses and optimizations previously inaccessible to OpenMP codes, as well as
-the ability to target other runtimes. Using a Cilk runtime backend, we compare
-to existing OpenMP implementations. Initial performance results for the
-Barcelona OpenMP tasking suite and show performance improvements over existing
-OpenMP compiler implementations. 
+This work explores a frontend that compiles OpenMP tasking semantics to Tapir, 
+an extension to LLVM IR that represents fork-join parallelism. This enables
+analyses and optimizations that were previously inaccessible to OpenMP codes, as well as
+the ability to target additional runtimes at code generation. Using a Cilk runtime 
+backend, we compare results to existing OpenMP implementations. Initial performance 
+results for the Barcelona OpenMP tasking suite and show performance improvements over 
+these existing implementations.
 \end{abstract}
 
 \maketitle
@@ -153,50 +155,49 @@ OpenMP compiler implementations.
 \section{Introduction} \label{Sec:Introduction}
  
 When writing task-parallel programs today, one has a large selection of
-programming models. Unfortunately, despite having significant overlap in
-semantics, parallel programming models such as OpenMP\cite{}, Cilk\cite{},
-Kokkos\cite{}, HPX\cite{}, Charm++\cite{},
+potential programming models and implementations to consider. Unfortunately, 
+despite having some significant overlaps in semantics, parallel programming models 
+such as OpenMP\cite{}, Cilk\cite{},Kokkos\cite{}, HPX\cite{}, Charm++\cite{},
 Qthreads\cite{}, pthreads\cite{}, MPI\cite{}, Chapel\cite{}, UPC\cite{},
-among others have virtually no ability to interoperate either at compile
-time or run time.
+among others have limited ability to interoperate either at the level of 
+compile-time analysis or at run-time execution.
 \wmnote{Not sure if relevant, but there was some experiment run a while back of someone composing a library that internally used OpenMP
 with another framework that had terribly results compared with either used alone.} 
 \gsnote{Hmm. A quick googling turned up a project out of berkeley combining OpenMP and TBB, 
 but performance didn't seem too bad. I'll take another look tomorrow.}
-Many of these programming models are implemented as runtime libraries with only
-primitive compiler support. As a result, most of these parallel frameworks
-aren't able to take advantage of the compiler's analysis and optimizations.
-There has been some recent work on specializing compilers to reason
-about parallel programming libraries \cite{Moss_2016}, but fragmentation among
+In addition, many of these programming models are implemented as runtime libraries with only
+primitive compiler support. As a result, most are not able to take advantage of the compiler's 
+analysis and optimization capabilities.
+While there has been some recent work on specializing compilers to reason
+about parallel programming libraries~\cite{Moss_2016}, fragmentation among
 models presents a significant challenge for compiler writers, which must choose
-a single model to analyze and optimize. An ideal solution would be some form of
-common representation of parallelism.
+a single model, or multiple intermediate forms, to use for analysis and optimization. An ideal 
+solution would be a form of common representation of parallel semantics and constructs.
 
 Compilers implement the majority of their analyses and optimizations on
 intermediate representations \textbf{(IRs)} which allow such transformations
-to be written once with relative ease and apply to a variety of source languages
-such as C or C++.
+to be written once with relative ease and apply to a variety of source front-end
+languages such as C or C++.
 Historically, the IR of mainstream compilers such as LLVM\cite{llvm} or GCC's Gimple\cite{}
-haven't suppored parallel programs. As a consequence, compilers relying on these
-IRs haven't had the ability to
-represent, and therefore reason about, parallelism. The recent work of
-Schardl et al. \cite{tapir} has shown that real world compiler IRs can be
+haven't suppored parallel constructs. As a consequence, compilers utilizing these
+IRs haven't had the ability to reason about parallelism. The recent work of
+Schardl et al.~\cite{tapir} has shown that the LLVM IR can be
 extended to represent fork-join parallelism without requiring a major rewrite.
-They do so by extending the LLVM instruction set with three instructions
+They did so by extending the LLVM instruction set with three instructions
 capable of representing fork-join parallelism. To benchmark performance and test
 accuracy, they wrote a frontend which translated programs written with Cilk, a parallel
-programming model for C/C++, into Tapir. They also wrote a backend to \textbf{lower}
-take Tapir programs to vanilla LLVM with Cilk runtime calls.
+programming model for C/C++, into the Tapir IR. They also implemented a backend to \textbf{lower}
+Tapir programs to vanilla LLVM IR with embedded Cilk runtime calls.
 They suggested that a similar approach could be taken with OpenMP and other
 such frameworks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This allows us to both analyze and optimize
 OpenMP programs as well as compile programs written in OpenMP to use other runtimes.
-For this paper, our prototype implementation uses a Cilk runtime as a backend,
-and we run our prototype implementation on the Barcelona OpenMP task suite
-\cite{barcelona}. We discuss the kinds of optimizations this enables, and how
-the work could be extended to include other parallelism constructs and semantics
+For this paper, our prototype implementation uses the Cilk runtime as a backend,
+and we run our prototype implementation on the Barcelona OpenMP task suite~\cite{barcelona}. 
+We discuss the kinds of optimizations this enables, and how
+the work can be extended to include other parallelism constructs and semantics
 in OpenMP. We also discuss the possibility of extending this work to other
 programming models, which would help to alleviate some of the fragmentation
 issues discussed above. 
@@ -204,19 +205,20 @@ issues discussed above.
 The contributions of this work include: 
 
 \begin{itemize}
-\item A prototype frontend from OpenMP task constructs to Tapir IR
-\item Benchmarks of the implementation using a Cilk runtime backend, showing
-performance improvements over existing OpenMP implementations
-\item An initial investigation into the reasons for the performance improvement
+  \item A prototype frontend that transforms OpenMP task constructs to Tapir IR.
+  \item Benchmarks of the implementation using a Cilk runtime backend, showing
+        performance improvements over existing OpenMP implementations.
+  \item An initial investigation into the reasons for these performance improvements.
 \end{itemize}
 
-Our hope for this paper is that it moves the community towards a shared IR that
-can be used for many programming models. This work presented in this paper only
-represents a small step in that direction, and there is still a herculean amount
-of work required. We argue that the benefits vastly outweigh the costs, and
-hope to see more work follow suit. 
+Our hope for this paper is to move the community towards further conversations on a 
+shared IR that can be used for many programming models. The work presented in this paper only
+represents a small step in that direction and there is still a herculean amount
+of design and implementaton details to be considered. We argue that the benefits vastly outweigh 
+the costs and we hope to see additional future work explore additional possibilities. 
 
-\subsection{Outline}
+% I'd skip the subsection...  Not critical, just personal prefs... 
+% \subsection{Outline}
 
 The remainder of the paper is organized as follows: In Section~\ref{Sec:Background} 
 we give background and motivation for the paper. Following that, we describe OpenMP
@@ -232,55 +234,64 @@ Section~\ref{Sec:Future}, and conclude in Section~\ref{Sec:Conclusion}.
 
 \section{Background} \label{Sec:Background}
 
-Internal representations (IRs) are a crucial part of modern compilers.  By
+Internal representations are a crucial part of modern compiler design and implementation.  By
 representing code in a generic, hardware-agnostic format, they allow both
-multiple frontends for different source languages, and multiple backends for
-different hardware, to all take advantage of a series of compiler optimizations
-and analyses. 
+multiple frontends and backends to all take advantage of a common/shared series of compiler 
+analyses and optimizations. 
 
-LLVM has gained traction in the academic community for its simplicity,
-relatively painless modification, and extensibility\cite{lattner2004llvm}.
-Historically, LLVM has had a sequential semantics: there is no explicit notion
+LLVM has gained traction in the broad community for its simplicity,
+relative ease of both experimentation and modifications, and extensibility~\cite{lattner2004llvm}.
+Historically, LLVM has only had a sequential semantics: there is no explicit notion
 of concurrent or parallel processes. This has resulted in existing compilers
 treating parallelism constructs as thin wrappers for calls into runtime
 systems. These calls are infeasible for the compiler to reason about, due to
-the complexity and flexibility of runtimes being called. This situation was
-recently remedied by Schardl et al. \cite{tapir}. By adding three instructions
-to LLVM, Tapir enables analyses and optimizations of parallel code. We describe
-Tapir in detail in Section~\ref{Sec:Tapir}. For a more complete description see
-\cite{tapir}. 
+the complexity and flexibility of the runtimes being called \pmnote{and the challenge of
+reasoning about the corresponding semantics in a uniform fashion?}. The addition of parallel
+constructs were recently explored by Schardl et al.~\cite{tapir}. By adding three first-class 
+instructions to LLVM, Tapir enables analyses and optimizations of parallel constructs. We briefly 
+describe the key aspects of Tapir in Section~\ref{Sec:Tapir}.
+% I removed this as the reference was already given...   PM 
+% For a more complete description see \cite{tapir}. 
 
 Arguably the most ubiquitous parallel programming model for on-node parallelism
-in HPC, OpenMP has grown from being a way to implement parallel for loops to an
-enormous and complex specification for parallelism. This paper focuses on a 
+in HPC, OpenMP has grown from being a way to implement parallel loops into a
+large and complex specification for parallelism. This paper focuses on a 
 relatively recent addition to the OpenMP specification: the \texttt{task}
 and \texttt{taskwait} constructs. A detailed description of these constructs
-is presented in Section~\ref{Sec:OpenMP}. For a more complete description see
-\cite{spec}.
+is presented in Section~\ref{Sec:OpenMP} and a more complete description can 
+be found in the OpenMP specification~\cite{spec}.
 
 \subsection{Fragmentation}
 
 In this section we further discuss a significant challenge in HPC:
 fragmentation of parallel programming models. There are many ways to write
-parallel programs \cite{spec, qthreads, chapel, cilk, kokkos, legion}. From
+parallel programs~\cite{spec, qthreads, chapel, cilk, kokkos, legion} \pmnote{I
+would add MPI and UPC/PGAS here too}. From
 libraries, to language extensions, to standalone languages, to combinations of
 the above, fragmentation of parallel programming models is a problem that is
 only getting worse. This means that when writing tooling, optimizations, or
-analyses, one has to choose which model to target. One common difficulty among
-all of these is that reasoning about parallel programs is hard, and compilers
-can help. This is exactly analogous the problem LLVM solves: compiler
-optimizations are hard , so sharing them is valuable. Tapir is a demonstration
-that the the LLVM approach to compilation of serial code can be effectively
-extended to the case of parallel code. 
+analyses, one has to choose which model to target as well as understand points
+of contention and interoperability between them. A common difficulty among
+all of these is that reasoning about parallel programs is hard and compilers
+can potentially help reduce this burden. This is exactly analogous the problem 
+LLVM solves: compiler optimizations are hard, so sharing them is valuable. Tapir 
+is a demonstration that the the LLVM approach to compilation of serial code can 
+be effectively extended to help reason about parallel code. 
 
 With fragmentation comes questions of compatibility, or composability, of 
 different programming models. To illustrate this issue, consider the example of
 a program using a library that uses OpenMP to implement parallelism internally. 
-If said program uses a different programming model for parallelism, e.g. Cilk
-, there is currently no good solution for ensuring that the two different backends
+If said program uses a different programming model for parallelism, e.g. Cilk,
+there is currently no good solution for ensuring that the two different backends
 will cooperate with management of hardware resources. 
 
 Addressing these concerns this is a major motivation for our use of Tapir.
+\pmnote{This made me remember that Rice and Cray folks did some work on extending LLVM
+to reason about PGAS-like constructs We should probably call that out in 
+this discussion -- that said, I don't recall their approach being general so it 
+does not quite fit the discussion here but I'd have to think a bit harder if it
+would be possible to capture something like MPI operations in some fashion... 
+I will email George a pointer to the paper...} 
 By standardising an IR, in addition to easing the development of optimizations,
 one avoids duplicating work across different implementations. It also enables
 the possibility of multiple programming models coexisting peacefully. We'll
