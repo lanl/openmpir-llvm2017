@@ -179,20 +179,20 @@ common representation of parallel semantics and constructs.
 
 Compilers implement the majority of their analyses and optimizations on
 intermediate representations \textbf{(IRs)} which allow such transformations
-to be written once with relative ease and apply to a variety of source front-end
-languages such as C or C++.
-Historically, the IR of mainstream compilers such as LLVM\cite{llvm} or GCC's Gimple\cite{}
-haven't suppored parallel constructs. As a consequence, compilers utilizing these
-IRs haven't had the ability to reason about parallelism. The recent work of
-Schardl et al.~\cite{tapir} has shown that the LLVM IR can be
-extended to represent fork-join parallelism without requiring a major rewrite.
-They did so by extending the LLVM instruction set with three instructions
-capable of representing fork-join parallelism. To benchmark performance and test
-accuracy, they wrote a frontend which translated programs written with Cilk, a parallel
-programming model for C/C++, into the Tapir IR. They also implemented a backend to \textbf{lower}
-Tapir programs to vanilla LLVM IR with embedded Cilk runtime calls.
-They suggested that a similar approach could be taken with OpenMP and other
-such frameworks.
+to be written once with relative ease and apply to a variety of source
+front-end languages such as C or C++.  Historically, the IR of mainstream
+compilers such as LLVM~\cite{llvm} or GCC's Gimple~\cite{} haven't suppored
+parallel constructs. As a consequence, compilers utilizing these IRs haven't
+had the ability to reason about parallelism. The recent work of Schardl et
+al.~\cite{tapir} has shown that the LLVM IR can be extended to represent
+fork-join parallelism without requiring a major rewrite.  They did so by
+extending the LLVM instruction set with three instructions capable of
+representing fork-join parallelism. To benchmark performance and test accuracy,
+they wrote a frontend which translated programs written with Cilk, a parallel
+programming model for C/C++, into the Tapir IR. They also implemented a backend
+to \textbf{lower} Tapir programs to vanilla LLVM IR with embedded Cilk runtime
+calls. They suggested that a similar approach could be taken with OpenMP and
+other such frameworks.
 
 In this work, we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This allows us to both analyze and optimize
@@ -631,7 +631,7 @@ paper is tagged as LLVM17.
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
-\texttt{fib} example from Section~\ref{Sec:OpenMP}. In \figref{fig:Example}
+\texttt{fib} example from Section~\ref{Sec:OpenMP}. In Figure~\ref{Fig:Example}
 we show what Tapir code is generated.  
 
 \begin{figure*}
@@ -685,7 +685,7 @@ det.cont4:
 \end{tabular}
 
 \caption{Compilation to Tapir}
-\label{fig:Example}
+\label{Fig:Example}
 \end{figure*}
 
 The listed Tapir LLVM IR code corresponds to lines 7 through 12 of the C source
