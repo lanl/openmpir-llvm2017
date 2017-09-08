@@ -141,35 +141,35 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 
 \begin{abstract}
 Optimizing compilers for task-level parallelism are still in their infancy.
-This work explores a frontend that compiles OpenMP tasking semantics to Tapir,
+This work explores a compiler front end that translates OpenMP tasking semantics to Tapir,
 an extension to LLVM IR that represents fork-join parallelism. This enables
 analyses and optimizations that were previously inaccessible to OpenMP codes,
 as well as the ability to target additional runtimes at code generation. Using
-a Cilk runtime backend, we compare results to existing OpenMP implementations.
-Initial performance results for the Barcelona OpenMP tasking suite and show
-performance improvements over these existing implementations.
+a Cilk runtime back end, we compare results to existing OpenMP implementations.
+Initial performance results for the Barcelona OpenMP tasking suite show
+performance improvements over existing implementations.
 \end{abstract}
 
 \maketitle
 
 \section{Introduction} \label{Sec:Introduction}
  
-When writing task-parallel programs today, one has a large selection of
+When writing task-parallel programs today, there is a large selection of
 potential programming models and implementations to consider. Unfortunately, 
 despite having some significant overlaps in semantics, parallel programming
 models such as OpenMP~\cite{openmp}, Cilk~\cite{cilk}, Kokkos~\cite{kokkos},
 HPX~\cite{hpx}, Charm++~\cite{charm}, Qthreads~\cite{qthreads},
 pthreads\cite{pthreads}, MPI~\cite{mpi}, Chapel~\cite{chapel}, UPC~\cite{upc},
-OpenCL~\cite{opencl}, OpenACC~\cite{openacc} among others have limited ability to
+OpenCL~\cite{opencl}, and OpenACC~\cite{openacc}, among others, have limited ability to
 interoperate either at the level of compile-time analysis or at run-time
 execution. In addition, many of these programming models are implemented as
-runtime libraries with only primitive compiler support. As a result, most are
-not able to take advantage of the compiler's analysis and optimization
+runtime libraries with only primitive compiler support. As a consequence, most are
+not able to take advantage of potential compiler analysis and optimization
 capabilities.  While there has been some recent work on specializing
 compilers to reason about parallel programming libraries~\cite{Moss_2016},
 fragmentation among models presents a significant challenge for compiler
-writers, which must choose a single model, or multiple intermediate forms, to
-use for analysis and optimization. An ideal solution would be a form of
+writers, which must choose a single model, or multiple intermediate forms, for
+analysis and optimization. An ideal solution would be a 
 common representation of parallel semantics and constructs.
 
 
@@ -185,39 +185,37 @@ to be written once with relative ease and apply to a variety of source
 front-end languages such as C or C++.  Historically, the IR of mainstream
 compilers such as LLVM~\cite{lattner2004llvm} or GCC's
 Gimple~\cite{merrill2003generic} haven't suppored parallel constructs. As a
-consequence, compilers utilizing these IRs haven't had the ability to reason
-about parallelism. The recent work of Schardl et al.~\cite{tapir} has shown
+consequence, compilers using these IRs haven't had the ability to reason
+about parallelism. The recent work of Schardl et al.\ has shown
 that the LLVM IR can be extended to represent fork-join parallelism without
-requiring a major rewrite.  They did so by extending the LLVM instruction set
+requiring a major rewrite~\cite{tapir}.  They did so by extending the LLVM instruction set
 with three instructions capable of representing fork-join parallelism. To
-benchmark performance and test accuracy, they wrote a frontend which translated
+benchmark performance and test accuracy they wrote a front end which translated
 programs written with Cilk, a parallel programming model for C/C++, into the
-Tapir IR. They also implemented a backend to \textbf{lower} Tapir programs to
+Tapir IR. They also implemented a back end to \textbf{lower} Tapir programs to
 vanilla LLVM IR with embedded Cilk runtime calls. They suggested that a similar
 approach could be taken with OpenMP and other such frameworks.
 
-In this work, we put that suggestion to the test, implementing OpenMP tasks by
+In this work we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This allows us to both analyze and optimize
 OpenMP programs as well as compile programs written in OpenMP to use other runtimes.
-For this paper, our prototype implementation uses the Cilk runtime as a backend,
+For this paper our prototype implementation uses the Cilk runtime as a back end,
 and we run our prototype implementation on the Barcelona OpenMP task suite~\cite{barcelona}. 
-We discuss the kinds of optimizations this enables, and how
-the work can be extended to include other parallelism constructs and semantics
+We discuss the kinds of optimizations this enables and how
+the work can be extended to include other parallel constructs and semantics
 in OpenMP. We also discuss the possibility of extending this work to other
-programming models, which would help to alleviate some of the fragmentation
-issues discussed above. 
+programming models, which would help to alleviate some of the problems with fragmentation
+previously discussed.
 
-The contributions of this work include: 
-
+The contributions of this work include
 \begin{itemize}
-  \item A prototype frontend that transforms OpenMP task constructs to Tapir IR.
-  \item Benchmarks of the implementation using a Cilk runtime backend, showing
-        performance improvements over existing OpenMP implementations.
+  \item A prototype front end that transforms OpenMP task constructs to Tapir IR;
+  \item Benchmarks of the implementation using a Cilk runtime back end, showing
+        performance improvements over existing OpenMP implementations; and
   \item An initial investigation into the reasons for these performance improvements.
 \end{itemize}
-
-Our hope for this paper is to move the community towards further conversations on a 
-shared IR that can be used for many programming models. The work presented in this paper only
+Our hope is to move the community towards further conversations on a 
+shared IR that can be used for many programming models. The work presented here only
 represents a small step in that direction and there is still a herculean amount
 of design and implementaton details to be considered. We argue that the benefits vastly outweigh 
 the costs and we hope to see additional future work explore additional possibilities. 
@@ -225,16 +223,16 @@ the costs and we hope to see additional future work explore additional possibili
 % I'd skip the subsection...  Not critical, just personal prefs... 
 % \subsection{Outline}
 
-The remainder of the paper is organized as follows: In Section~\ref{Sec:Background} 
-we give background and motivation for the paper. Following that, we describe OpenMP
+The remainder of the paper is organized as follows.  In Section~\ref{Sec:Background} 
+we give background and motivation for the presented work. Following that, we describe OpenMP
 tasking in Section~\ref{Sec:OpenMP}, and Tapir in Section~\ref{Sec:Tapir}. We then 
 discuss the implementation, and how we compile OpenMP task constructs to Tapir IR in
 Section~\ref{Sec:Implementation}. In Section~\ref{Sec:Evaluation} we describe the 
-evaluation setup, including what implementations we compare to and how. We discuss
+evaluation setup, including which implementations we compare to and how. We discuss
 the results of evaluation in Section~\ref{Sec:Results}, including possible
-explanations for discrepancies. We discuss the implications of the results ans the
+explanations for discrepancies. We discuss the implications of the results and the
 significance of this work in a large context in~\ref{Sec:Discussion}. Finally,
-we cover some of the many ways the work can be extended in
+we cover some of the many ways the work could be extended in
 Section~\ref{Sec:Future}, and conclude in Section~\ref{Sec:Conclusion}.
 
 \section{Background} \label{Sec:Background}
@@ -248,8 +246,8 @@ LLVM has gained traction in the broad community for its simplicity,
 relative ease of both experimentation and modifications, and extensibility~\cite{lattner2004llvm}.
 Historically, LLVM has only had a sequential semantics: there is no explicit notion
 of concurrent or parallel processes. This has resulted in existing compilers
-treating parallelism constructs as thin wrappers for calls into runtime
-systems. These calls are infeasible for the compiler to reason about, due to
+treating parallel constructs as thin wrappers for calls into run-time
+systems. These calls are infeasible for the compiler to reason about because of
 the complexity and flexibility of the runtimes being called, and the challenge
 of reasoning about the corresponding semantics in a uniform fashion. The
 addition of parallel constructs were recently explored by Schardl et
@@ -259,8 +257,8 @@ the key aspects of Tapir in Section~\ref{Sec:Tapir}.
 % I removed this as the reference was already given...   PM For a more complete
 % description see \cite{tapir}. 
 
-Arguably the most ubiquitous parallel programming model for on-node parallelism
-in HPC, OpenMP has grown from being a way to implement parallel loops into a
+Arguably the most common parallel programming model for on-node parallelism
+in HPC, OpenMP has grown from being a method for implementing parallel loops into a
 large and complex specification for parallelism. This paper focuses on a 
 relatively recent addition to the OpenMP specification: the \texttt{task}
 and \texttt{taskwait} constructs. A detailed description of these constructs
@@ -272,10 +270,10 @@ be found in the OpenMP specification~\cite{openmp}.
 In this section we further discuss a significant challenge in HPC:
 fragmentation of parallel programming models. There are many ways to write
 parallel programs~\cite{openmp, qthreads, chapel, cilk, kokkos, legion, upc,
-mpi} . From libraries, to language extensions, to standalone languages, to
-combinations of the above, fragmentation of parallel programming models is a
+mpi}.  From libraries, to language extensions, to standalone languages, to
+combinations of the these, the fragmentation of parallel programming models is a
 problem that is only getting worse. This means that when writing tooling,
-optimizations, or analyses, one has to choose which model to target as well as
+optimizations, or analyses, one much choose which model to target as well as
 understand points of contention and interoperability between them. A common
 difficulty among all of these is that reasoning about parallel programs is hard
 and compilers can potentially help reduce this burden. This is exactly
@@ -284,31 +282,31 @@ them is valuable. Tapir is a demonstration that the the LLVM approach to
 compilation of serial code can be effectively extended to help reason about
 parallel code. 
 
-With fragmentation comes questions of compatibility, or composability, of 
-different programming models. To illustrate this issue, consider the example of
+With fragmentation comes questions of compatibility or composability of 
+different programming models. To illustrate this, consider the example of
 a program using a library that uses OpenMP to implement parallelism internally. 
-If said program uses a different programming model for parallelism, e.g. Cilk,
-there is currently no good solution for ensuring that the two different backends
+If this program uses a different programming model for parallelism, e.g.\ Cilk,
+there is currently no good solution for ensuring that the two different back ends
 will cooperate with management of hardware resources. 
-
-Addressing these concerns this is a major motivation for our use of Tapir.  By
-standardising an IR, in addition to easing the development of optimizations,
+%
+Addressing these concerns is a major motivation for our use of Tapir.  By
+standardizing an IR, in addition to easing the development of optimizations,
 one avoids duplicating work across different implementations. It also enables
-the possibility of multiple programming models coexisting peacefully. We'll
-return to this issue later in Section~\ref{Sec:Discussion} when discussing
+the possibility of multiple programming models coexisting peacefully. We will
+return to this consideration later in Section~\ref{Sec:Discussion} when discussing
 future work.
 
 \section{Tapir} \label{Sec:Tapir}
 Tapir is an extension to LLVM proposed by Schardl, Moses, and Leiserson
-aiming to resolve issues regarding optimizing parallel code. Prior to
-the introduction of Tapir, compilers would represent parallel programs
+seeking to resolve issues in optimizing parallel code. Prior to
+the introduction of Tapir compilers would represent parallel programs
 by directly translating their syntax to opaque runtime calls. This allowed
-for compilers to support parallel programs, but meant that traditional 
-optimizations such as code motion \cite{} or common-subexpression elimination \cite{}
+compilers to support parallel programs but meant that traditional 
+optimizations such as code motion~\cite{} or common-subexpression elimination~\cite{}
 weren't able to reason about parallel programs. This often led to parallel
-programs running significantly slower than expected. In the Tapir project,
+programs running significantly slower than expected. In the Tapir project
 the authors show that it is possible to represent and optimize fork-join
-parallel programs with relatively minimal modifications to the compiler: namely
+parallel programs with relatively minimal modifications to the compiler, namely
 the introduction of three instructions designed to interface well with an
 existing compiler.
 
@@ -361,12 +359,12 @@ void search(int low, int high) {
   \label{fig:search}
 \end{figure}
 
-Consider the first code segment defined in~\figref{search}.
-Here, we find a simple OpenMP program which performs a divide-and-conquer search.
-However, as written, there is a simple optimization that can be performed --
-namely, that the value \code{(low+high)/2} may be computed once before either
-parallel task, avoiding redundant computations. For
-the serial version of this program, optimizations like this are performed
+Consider the first code segment defined in~\figref{search},
+a simple OpenMP program which performs divide-and-conquer search.
+However, as written, there is a simple optimization that can be performed,
+that the value \code{(low+high)/2} may be computed once before either
+parallel task, thereby avoiding redundant computations. For
+the serial version of this program optimizations like this are performed
 automatically. However, without the use of Tapir, these sorts of optimizations
 are not run on parallel programs.
 
@@ -415,7 +413,7 @@ reason about what is happening.}
 \subsection{Tapir Internals}
 Tapir is a compelling solution to this problem because it allows existing
 analysis and optimizations to work on parallel programs without significant modifications.
-To properly describe Tapir, one must briefly introduce key aspects of LLVM.
+To properly describe Tapir requires a brief introduction to key aspects of LLVM.
 LLVM represents expression/evaluation order through a control-flow graph (CFG) of blocks that contain 
 sequences of instructions. Blocks always end with terminator instructions that
 define the edges of the control flow graph. For example, \figref{CFG} shows a simple
@@ -464,17 +462,17 @@ if.end:
   \vspace{-.4cm}
 \end{figure*}
 
-To represent parallelism, Tapir introduces the \code{detach}, \code{reattach}, and
+To represent parallelism Tapir introduces the \code{detach}, \code{reattach}, and
 \code{sync} instructions. The \code{detach} statement is syntactically similar to
-the conditional branch as it is also a terminator instruction with with two blocks.
+a conditional branch in that it is a terminator instruction with with two blocks.
 However, unlike the conditional branch which denotes a choice between successors, the \code{detach} instruction denotes that its two successors may run in parallel. Semantically,
 the first successor of a \code{detach} instruction is referred to as the \textbf{detached block} and represents a task that can, but is not required to, run in parallel with the
 \textbf{continuation block}, or the second successor to the detach statement. The \code{detach}
 is analagous to a \code{fork} in most fork-join models.
 
-At the end of any task created by a \code{detach} instruction, one must end with a \code{reattach} instruction to the corresponding continuation block. The \code{reattach} instruction
+The end of a task created by a \code{detach} instruction must end with a \code{reattach} instruction to the corresponding continuation block. The \code{reattach} instruction
 is used to denote the end of a parallel task.
-
+%
 Finally, one may use the \code{sync} instruction to wait for any outstanding tasks created
 by \code{detach} instructions within the current function to complete. The \code{sync}
 instruction is analagous to a \code{join} in most fork-join frameworks.
@@ -540,13 +538,13 @@ Fibonacci number calculation on two threads.}
 \label{fig:fib-graph-to-schedule}
 \end{figure*}
 
-The initial design of the OpenMP task model~\cite{ayguade09design} established 
-a basic framework for asynchronous task parallel execution in OpenMP programs.
-Subsequent versions of the OpenMP specification up to the current version 4.5 
-have added additional new features to the tasking model.  The \texttt{depend} 
+The initial design of the OpenMP task model established 
+a basic framework for asynchronous task parallel execution in OpenMP programs~\cite{ayguade09design}.
+Subsequent versions of the OpenMP specification, up to the current version 4.5, 
+have added new features to the tasking model.  The \texttt{depend} 
 clause codifies data dependences among tasks, indicating that a data location 
 is an input or output of a task.  The runtime system ensures that a task is 
-not scheduled until its input dependences are fulfilled.  The \texttt{taskloop} 
+not scheduled until its input dependencies are fulfilled.  The \texttt{taskloop} 
 construct combines groups of independent loop iterations into explicit tasks, 
 enabling composition of concurrent loop execution and independent explicit 
 tasks within the same OpenMP parallel region. The \texttt{taskgroup} construct 
@@ -554,9 +552,9 @@ waits on not only all child tasks, but all descendent tasks, providing a deep
 synchronization. The \texttt{taskwait} construct allows the application to 
 indicate a point at which the implementation may suspend the current task to 
 work on other tasks, as may be desired for long-running tasks that generate 
-many others.  The task concept was also leveraged to provide for asynchronous 
+many others.  The task concept was also leveraged to provide asynchronous 
 offload of data and computation to accelerators by applying the \texttt{nowait} 
-clause to device constructs like the \texttt{target} construct to generate an 
+clause to device constructs such as the \texttt{target} construct to generate an 
 asynchronous \textit{target task}.
 
 Several clauses for the \texttt{task} construct aim to optimize execution of 
@@ -573,70 +571,71 @@ on the thread where it is generated).
 \section{Implementation} \label{Sec:Implementation}
 
 Tapir is implemented as an extension to the LLVM instruction set. Clang is a C
-family compiler that has support for OpenMP extensions \cite{clang} and targets
-LLVM. The existing Clang OpenMP implementation maps OpenMP constructs directly
-to OpenMP runtime library calls, by wrapping a C statement in a
+family compiler that has support for OpenMP extensions and targets
+LLVM~ \cite{clang}. The existing Clang OpenMP implementation maps OpenMP constructs directly
+to OpenMP runtime library calls by wrapping a C statement in a
 \texttt{CapturedStmt}. This replaces a C statement with a function call into
-the OpenMP runtime library, along with a machine generated function who's body
+the OpenMP runtime library, along with a machine generated function whose body
 contains that statement.   
 
-For this work, we replaced a subset of the OpenMP implementation to generate
+For this work we replaced a subset of the OpenMP implementation to generate
 Tapir IR instead of vanilla LLVM IR with OpenMP runtime calls. Specifically, we
-replace the two primary pragmas for task parallelism: \texttt{task\_spawn} and
-\texttt{task\_wait}. By re-using code from Schardl et al. for code generation
+replace the two primary \texttt{task\_spawn} and
+\texttt{task\_wait} pragmas for task parallelism. By re-using code from Schardl et al.\ for code generation
 of Cilk constructs, we were able to easily generate Tapir code for these OpenMP
 pragmas. The ease with which this was completed is a testament to the quality of
 the Tapir implementation. 
 
 While we did implement the codegen for the \texttt{task\_spawn} and
-\texttt{task\_wait} constructs, it's worth noting here that even for these
-pragmas, the implementation is incomplete. Currently, any clauses modifying the
-behaviour of the pragmas is ignored. Probably the most common semantics this
-will change of variable semantics, e.g. \texttt{shared} vs. \texttt{private}.
+\texttt{task\_wait} constructs, it's worth noting that even for these
+pragmas the implementation is incomplete. Currently, any clauses modifying the
+behavior of the pragmas is ignored. Probably the most common semantics this
+will change is for the semantcis of variables, e.g.\ \texttt{shared} vs.\ \texttt{private}.
 Surprisingly, this had little effect on the correctness of the entire Barcelona
-OpenMP task suite. Indeed, it is likely that fixing this issue would increase
-the performance of this work marginally, due to reducing the number of memory
-copies for variables declared \texttt{private} in OpenMP code. This property
+OpenMP task suite. Indeed, it is likely that fixing this problem would marginally increase
+performance by reducing the number of memory
+copies for variables declared \texttt{private} in OpenMP code.  The fact
 that behaviour wasn't changed significantly is worth revisiting, and we do so
 in Section~\ref{Sec:Discussion}. 
 
-This work represented in this paper is only frontend implementation, which
-means we use the only existing backend for Tapir. The existing backend
-generates code that calls into the Cilk runtime, \texttt{libcilkrts}. This has
+The work represented in this paper is only front-end implementation, which
+means we use the only existing back end for Tapir. The existing back end
+generates code that calls the Cilk runtime \texttt{libcilkrts}. This has
 implications for adhering to the OpenMP specification. For example, environment
-variables such as \texttt{OMP\_NUM\_THREADS} are ignored, replaced by
+variables such as \texttt{OMP\_NUM\_THREADS} are ignored and replaced by
 \texttt{CILK\_NWORKERS}.  We discuss some of these issues below, and return to
-address others in the future work section. 
+address others in the discussion of future work.
 
 There are other issues that had to be overcome to run full OpenMP programs
-using Tapir as described above. Generally, in addition the the \texttt{task} 
-and \texttt{taskwait} pragmas, a program has to contain initialization OpenMP
-pragmas in order to run parallel code. A standard pattern for building
+using Tapir. Generally, in addition the the \texttt{task} 
+and \texttt{taskwait} pragmas, a program must contain pragmas to initialize OpenMP
+%pragmas in order to run parallel code.
+A standard pattern for building
 task-parallel OpenMP programs is to insert a \texttt{parallel} pragma to start
 the necessary hardware threads, followed immediately by a \texttt{single}
 pragma to have only one thread continue on the specified statement. Then the
-other threads will get work from spawned tasks, instead of implicitly executing
-the same code in a data parallel style. For the purpose of this paper, we took
+other threads will get work from spawned tasks instead of implicitly executing
+the same code in a data parallel manner. For the purpose of this work we took
 the shortcut of replacing these pragmas with no-ops. This worked well for all
-examples except for one, in which after the \texttt{parallel} and
+examples except for one in which after the \texttt{parallel} and
 \texttt{single} pragmas the top level task was called with an unnecessary
 \texttt{task} pragma.  Because the wait was implicit and unhandled by our
 implementation, the simple fix was to remove the \texttt{task} pragma. This was
 the only change required to the source code. Our temporary no-op shortcut, of
 course, doesn't follow the OpenMP specification, and should be addressed by
-future work. See Section~\ref{Sec:Future} for a further discussion how how the 
+future work. Section~\ref{Sec:Future} discusses how how the 
 implementation can be improved.
 
 All code used for the implementation is available at \\
 \texttt{https://github.com/lanl/openmpir-clang}. The version used for this
-paper is tagged as LLVM17.
+paper is tagged LLVM17.
 
 \subsection{Example} \label{Sec:Example}
 
 To better understand how the OpenMP to Tapir compiler works, we turn to the
 parallel fragment of the \texttt{fib} example from Section~\ref{Sec:OpenMP}. In
-Figure~\ref{fig:tapir-example} we show what the input OpenMP code and the Tapir code
-is generated.
+Figure~\ref{fig:tapir-example} we show the input OpenMP code and the Tapir code
+that is generated.
 
 \begin{figure*}[h!]
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ll}
@@ -689,23 +688,23 @@ block corresponding to the call to \texttt{fib(n-1)}, labeled
 \texttt{det.achd}. The continuation for the first call also immediately
 detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
 Finally, the continuation for the second call immediately calls sync. This is
-actually a nice example of code that will be optimized by Tapir. The LLVM code
-shown in \figref{tapir-example} is not optimized. With optimizataions turned
-on, Tapir will replace a \texttt{detach} of a function call followed
+a nice example of code that will be optimized by Tapir. The LLVM code
+shown in \figref{tapir-example} is not optimized. With optimizations turned
+on Tapir will replace a \texttt{detach} of a function call followed
 immediately by \texttt{sync} with a simple function call, resulting in faster
 code. 
 
 \section{Evaluation} \label{Sec:Evaluation}
 
-For evaluating the use of Tapir we compared performance on the Barcelona OpenMP Task 
-Suite~\cite{barcelona} to several existing OpenMP implementations. The suite is a set 
+To evaluate the use of Tapir we compared performance on the Barcelona OpenMP Task 
+Suite to several existing OpenMP implementations. The suite is a set 
 of tests intended to test performance of OpenMP implementations
 using both irregular and regular tasking.\footnote{An unbalanced tree search benchmark was
 very recently added to the suite. Unfortunately we were unable to succesfully run 
-it on any implementation, even for even medium input sizes. We have therefore left 
+it on any implementation, even for medium input sizes. We have therefore left 
 it out of our evaluation.  We will continue to work on this benchmark and will 
 include the results if the paper is accepted to the workshop.} The following list provides abridged descriptions of 
-each benchmark -- they are taken verbatim from~\cite{barcelona}:
+each benchmark taken verbatim from the test suite distribution.
 
 \begin{itemize}
 \item \texttt{Alignment}: aligns all protein sequences from  an  input
@@ -716,17 +715,17 @@ algorithm. It uses  a  weight matrix to score mismatches, and assigns
 penalties for opening and extending gaps. The output is the best score for each
 pair of them.
 \item \texttt{FFT}: computes the one-dimensional Fast Fourier Transform
-of a vector of n complex values using the Cooley-Tukey 
+of a vector of $n$ complex values using the Cooley-Tukey 
 algorithm. This is a divide and conquer algorithm that  recursively  breaks
 down a Discrete Fourier Transform (DFT) into many smaller DFT’s. In each of the
 divisions multiple tasks are generated.
-\item \texttt{Fibonacci}: computes the n'th fibonacci number using a  recursive
+\item \texttt{Fibonacci}: computes the $n$th Fibonacci number using a  recursive
 paralellization. While  not  representative  of  an efficient  fibonacci
 computation  it  is  still  useful  because  it  is a simple test case of a
 deep tree composed of very fine grain tasks.  
 \item \texttt{Floorplan}: kernel computes the optimal floorplan distribution
-of a number of cells. The algorithm gets an input file with  cell’s
-description  and  it  returns  the  minimum  area  size which includes all
+of a number of cells. The algorithm gets an input file with  cells'
+descriptions  and  it  returns  the  minimum  area  size which includes all
 cells. This minimum area is found through a recursive branch and bound search.
 We hierarchically generate tasks  for  each  branch  of  the  solution  space.
 The  state  of  the algorithm needs to be copied into each newly created task
@@ -747,13 +746,13 @@ problem, whose objective is to find a placement for $n$ queens on an $n \;
 \times \; n$ chessboard such that none of the queens attack any other. It uses
 a backtracking search algorithm with pruning. A task is created for each step
 of the solution.
-\item \texttt{Sort}: sorts a random permutation of n 32-bit numbers with  a
+\item \texttt{Sort}: sorts a random permutation of $n$ 32-bit numbers with  a
 fast  parallel  sorting  variation of  the  ordinary mergesort.  First, it
 divides an array of elements in two halves, sorting  each half  recursively,
 and  then  merging  the  sorted halves with a parallel divide-and-conquer
 method rather than the  conventional  serial  merge.  Tasks are  used  for
 each  split and merge. When the array is too small, a serial quicksort is used
-so increase  the  task  granularity.  To  avoid  the overhead of  quicksort, an
+to increase  the  task  granularity.  To  avoid  the overhead of  quicksort, an
 insertion  sort  is  used  for  very  small  arrays (below a threshold of 20
 elements).
 \item \texttt{SparseLU}: computes an LU matrix factorization over
@@ -771,11 +770,11 @@ each decomposition a task is created.
 \end{itemize}
 
 There are two classes of input sizes for the benchmarks. Some, like Floorplan,
-require input files. For each of these, we chose the largest provided. For the
+require input files. For each of these we chose the largest provided. For the
 benchmarks with a parameter to adjust the size of the input, we attempted to 
-choose a parameter size so that the fastest implementation was on the order of
+choose a parameter size so that the fastest implementation ran on the order of
 seconds. The one exception was for \texttt{Fibonacci}. Because, as discussed
-further below, the Intel implementation required large stacksize, we stopped at
+further below, the Intel implementation required a large stack size, we stopped at
 42. The exact inputs used are:
 
 \begin{itemize}
@@ -790,53 +789,53 @@ further below, the Intel implementation required large stacksize, we stopped at
 \item \texttt{Strassen: -n 8192}
 \end{itemize}
 
-The Intel compiler required increasing the stacksize for \texttt{Fibonacci} and
+The Intel compiler required increasing the stack size for \texttt{Fibonacci} and
 \texttt{FFT}. The implementation seemed to use significantly more stack space
 than the others, requiring setting \texttt{OMP\_STACKSIZE} to \texttt{256M} for
-computing the 42nd Fibonacci number. \texttt{FFT} ran fine with an increase to
+computing the 42nd Fibonacci number. \texttt{FFT} ran with an increase to
 \texttt{16M}.  
 
 For other implementations, we compare to GCC 7.1, Clang 4.0.1, and Intel
 17.0.0. The machine used is a two socket Intel Xeon E5-2683 v3 machine with
-132GB of memory, running Linux 4.11.4. Each Xeon has 16 cores running at
+132GB of memory running Linux 4.11.4. Each Xeon has 16 cores running at
 2.1GHz, with 20M of L3 cache. All benchmarks were run using all 64
-hyper-threads. 32 thread tests were run as a sanity check and showed
+hyper-threads. 32-thread tests were run as a sanity check and showed
 qualitatively similar results. It's worth noting that each of the other
-implementations comes with it's own runtime. In this sense, performance is a
-function of both the compiler and any optimizations it's able to perform, and
-the runtime.  Understanding the interaction of these two parts is non-trivial,
+implementations comes with its own runtime. In this sense, performance is a
+function of both the compiler and any optimizations it is able to perform, and
+the runtime.  Understanding the interaction of these two parts is non-trivial
 as we will see when discussing results. Each compiler was run with the flags
 \texttt{-O3 -fopenmp}. Our compiler was also run with \texttt{-ftapir} to
 enable Tapir instructions to be lowered to a parallel runtime (in this case,
 the default Cilk runtime).
 
 As mentioned in the Section~\ref{Sec:Implementation}, the gaps in the implementation
-changed program behaviour in a couple cases. In the case of \texttt{FFT}, we were
+changed program behavior in a couple cases. In the case of \texttt{FFT}, we were
 forced to remove an unecessary \texttt{task} pragma, as the current implementation
 doesn't insert the implicit barrier at the end of a \texttt{parallel} region. This 
 was a one line fix in the benchmark, and would be fixed properly by handling
 the \texttt{parallel} and \texttt{single} pragmas correctly in our implementation. 
 
-The second change in program behaviour due to our incomplete implementation was
-caused by the lack \texttt{critical} pragma and \texttt{atomic} pragmas. This
-issue showed up in the \texttt{Floorplan} benchmark. The \texttt{critical} pragma
-ensures that only one thread can executed the referred statement at a time. 
+The second change in program behavior due to our incomplete implementation was
+caused by the lack of the \texttt{critical} and \texttt{atomic} pragmas used
+in the \texttt{Floorplan} benchmark. The \texttt{critical} pragma
+ensures that only one thread can execute a particular statement at a time. 
 This should be fixable in the implementation by adding a simple code-localized
-synchronization generation in the IR. Similarly, the \texttt{atomic} pragma 
+synchronization generation in the IR\@. Similarly, the \texttt{atomic} pragma 
 can be addressed by retaining a pointer to the shared stack variable, much like
-existing OpenMP implementations. It is worth noting that this behaviour was
-non-deterministic, and that roughly half of the time the \texttt{Floorplan}
+existing OpenMP implementations. It is worth noting that this behavior was
+non-deterministic, and that roughly half of the time \texttt{Floorplan}
 still returned correct results. As we will see, this makes for an interesting
-trade-off given the performance increase witnessed.
+trade-off given the witnessed performance increase.
 
-We set a timeout of 10 minutes, as at least one implementation was always
+We set a time-out of 10 minutes, as at least one implementation was always
 finishing within 10 seconds, anything running more than 60 times slower becomes
-irrelevant. Due to time constraints, correctness checks were not performed on
-every run, so it is possible some non-determinism was missed. 
+irrelevant.  Because of time constraints correctness checks were not performed on
+every run so it is possible some non-determinism was missed. 
 
 Each variant was run 10 times, with the height of the bars representing the
 mean and the error bars representing standard deviation. In cases where there
-was timeout or segmentation fault, no time is reported, and the run is marked
+was timeout or segmentation fault no time is reported and the run is marked
 as faulty. 
 
 \section{Results} \label{Sec:Results}
@@ -874,10 +873,10 @@ implementations.
 \end{figure*}
 
 As mentioned earlier on \texttt{Floorplan} our implementation returned correct
-results nondeterministically due to not having an implementation of the OpenMP
+results nondeterministically because of not having an implementation of the OpenMP
 \texttt{critical} and \texttt{atomic} pragmas. While ICC and Clang finished in
-roughly 1-2 seconds, the Tapir implementation was finishing in 0.02 seconds,
-and computing the correct result roughly half the time. This raises interesting
+roughly 1-2 seconds, the Tapir implementation was finishing in 0.02 seconds
+and computing the correct result roughly half of the time. This raises interesting
 questions on the cost/benefit relation of the missing OpenMP pragmas.
 
 GCC was the only culprit for timeouts. Recall that the timeout was set at 10
@@ -885,51 +884,51 @@ minutes, so any timeout means GCC was running at least approximately 60 times
 slower than the fastest implementation. For example, on the \texttt{FFT}
 benchmark, while our Tapir implementation was running in under 5 seconds, the
 GCC implementation was timing out at 600 seconds, so was at least 100 times
-slower. We've left GCC results off of the graphs for the three timeout cases,
+slower. GCC results are omitted from graphs for the three timeout cases,
 \texttt{FFT}, \texttt{Fibonacci}, and \texttt{NQueens}.
 
 Putting failures aside, performance for our implementation is quite strong,
 generally outperforming or matching the best of existing implementations. For
 benchmarks where the overhead-to-work ratio is high is where the Tapir (and 
 Cilk) implementation shows significant benefit. For example, for the \texttt{Fibonacci}
-benchmark, our implementation finishes significantly faster than any of the
-others. While ICC failed for that sized input, we did test with smaller inputs
-and found it was similarly outpaced by the Tapir implementation.  \texttt{NQueens}
-and \texttt{FFT} show similar behaviour, to lesser degrees. In contrast,
+benchmark, our implementation runs significantly faster than any of the
+others. While ICC failed for that size input, we did test with smaller inputs
+and found it was similarly outperformed by the Tapir implementation.  \texttt{NQueens}
+and \texttt{FFT} show similar behavior but to lesser degrees. In contrast,
 benchmarks that have a lower overhead to work ratio unsurprisingly differ less
-in performance. For example,  
+in performance. For example,
+
+%%% something missing here!
 
 \subsection{Profiling}
 
 In this section we speculate \emph{why} the performance varies in
-the ways it does. While we have yet to figure out every discrepancy in
+the ways it does. While we have yet to identify every discrepancy in
 performance, we hope to get some ideas for why the performance of our
-implementation is generally better and where each of the implementations are
-spending a majority of the time. Our primary tool for this task will be performance 
+implementation is generally better and where each of the implementations is
+spending the bulk of the execution time. Our primary tool for this task is performance 
 counters. It's worth noting that some information is difficult to infer from 
-performance counters, such as sources of contention, reasons for memory locality 
-issues, etc. Still, they do give us some insight into performance bottlenecks.
+performance counters, such as sources of contention, reasons for memory locality,
+etc. Still, they do give us some insight into performance bottlenecks.
 
 Before we begin understanding why, it's worth noting again that the scope of the 
-work that this paper is responsible for is only the frontend. All performance
-gains due to the existing Tapir backend and Cilk runtime we sadly cannot claim
-credit for. We can break reasons for performance discrepancies into a few categories: 
-
+work that this paper is responsible for is only the front end. All performance
+gains attributable to the existing Tapir back end and Cilk runtime represent prior work.
+We can break reasons for performance discrepancies into a few categories: 
 \begin{itemize}
-\item Front-end code generation
-\item IR Optimizations
-\item Runtime efficiency
+\item Front-end code generation;
+\item IR Optimizations; and
+\item Runtime efficiency.
 \end{itemize}
-
 While we would like to distinguish between these, it is difficult to do so with
 only performance counter information. A more thorough investigation would
-require deep knowledge of each of the frontends and runtimes. While the
+require deep knowledge of each of the front ends and runtimes. While the
 importance of optimizations of parallel code is clear, we hypothesize that most
 of the disparity present in these results is more a function of runtime
 implementation differences. As justification for this hypothesis, consider
 the \texttt{Fibonacci} benchmark. There are no memory accesses to the heap, 
 and the code leaves little room for optimization (algorithmic rewrites
-notwithstanding). In other words, it is effectively a benchmark of how fast a
+aside), so it is effectively a benchmark of how fast a
 runtime can execute fork-join parallelism.
 
 
@@ -947,32 +946,30 @@ runtime can execute fork-join parallelism.
 %implementation
 %}
 
-There are two cases we'd like to look at using the profiler. The first is a 
-case when there is a large difference in runtime between implementations. For 
-this case, our hypothesis is that in these cases the slower implementations
-are, for some reason, spending more time in the runtime. As mentioned above, 
+There are two cases we examing using the profiler. The first is the
+case when there is a large difference in run times between implementations. For 
+these our hypothesis is that the slower implementations
+are for some reason spending more time in the runtime. As mentioned, 
 it is difficult to understand exactly why an implementation is spending more 
 time in the runtime without further investigation, but it is a useful 
 sanity check nonetheless. For this case, we turn to the \texttt{Fib} benchmark.
-Indeed, we get roughly the following breakdowns of work to overhead ratio
-according to the Linux \texttt{perf} tool:
-
+Indeed, we get roughly the following breakdowns of work-to-overhead ratio
+according to the Linux \texttt{perf} tool.
 \begin{itemize}
 \item \texttt{tapir: ~30\% runtime overhead, ~50\% work, ~20\% other}
 \item \texttt{clang: ~85\% runtime overhead, ~5\% work, ~10\% other}
 \item \texttt{icc: ~85\% runtime overhead, ~5\% work, ~10\% other}
 \item \texttt{gcc: ~100\% runtime overhead, ~0\% work, ~0\% other}
 \end{itemize}
-
 This supports our hypothesis that most of the slowdown incurred is overhead in
 the runtime. For Tapir the overhead is relatively small given the
 size of the work chunks, for \texttt{clang} and \texttt{icc} it is
 significantly larger, and for \texttt{gcc} it is overwhelming.
 
-For the cases where performance is close between the implementations, like
-\texttt{sparselu}, we expect runtimes to be dominated by actual task workloads. This 
+For the cases where performance is close between the implementations, such as
+\texttt{sparselu}, we expect run times to be dominated by actual task workloads. This 
 expectation is confirmed by investigating performance counters for \texttt{sparselu}
-where every implementation spends roughly 90\% of it's time in the task
+where every implementation spends roughly 90\% of its time in the task
 bodies. 
 
 \section{Discussion} \label{Sec:Discussion}
@@ -984,54 +981,56 @@ this paper does not take a stance on which one \emph{should} be used, it does
 accept that OpenMP is currently/potentially the most widely used model that has 
 a notion of tasks. The goal of this work is to show that a single intermediate
 representation can be used to implement multiple programming paradigms with
-good performance. Schardl et al. showed that Tapir works well as an IR target
+good performance. Schardl et al.\ showed that Tapir works well as an IR target
 for Cilk and surmised that it could be an effective IR for a large subset of
-  OpenMP \cite{tapir}. This work has taken the first step in that direction.
+  OpenMP~\cite{tapir}. This work has taken the first step in that direction.
 
-One interesting aspect of this work is that it compiles a language extension intended
-for one runtime (OpenMP) to use another (the Cilk runtime). While in many
-ways this is a weakness of this work, it does open the possibility of utilizing this 
-in a more general way to address many aspects including significant challenges 
-such as performance portability. Having a parallel-aware IR to work with enables, 
-in the same way that LLVM does for serial code, the possibility of multiple high-level 
-parallel languages and multiple parallel runtime targets. While the OpenMP specification's 
-requirement to have access to runtime routines complicates things, for many programming models
-it seems at least conceivable to map them onto multiple different runtimes. This
-opens the possibility of mixing programming models at compile time by targeting
-the same runtime. For example, if both OpenMP and Cilk targeted Tapir
-instructions, one could have a large application where some parts were written
-using Cilk, while other used OpenMP, and the result would not suffer the
-incompatibility problems often seen today. 
+One interesting aspect of this work is that it compiles a language extension
+intended for one runtime (OpenMP) to use another (the Cilk runtime). While in
+many ways this is a weakness of this work, it does open the possibility of
+utilizing this in a more general way to address many significant challenges
+such as performance portability. Having a parallel-aware IR enables the
+possibility of multiple high-level parallel languages and multiple parallel
+runtime targets in the same way that LLVM does for serial code. While the
+OpenMP specification's requirement to have access to runtime routines
+complicates things, for many programming models it seems at least conceivable
+to map them onto multiple different runtimes. This opens the possibility of
+mixing programming models at compile time by targeting the same runtime. For
+example, if both OpenMP and Cilk targeted Tapir instructions, one could have a
+large application where some parts were written using Cilk, while other used
+OpenMP, and the result would not suffer the incompatibility problems often
+seen today.
 
-The surprising fact that program behaviour wasn't changed significantly is
-worth discussing here. We surmise that it is likely due to the variable
-semantics borrowed from the Cilk codegen and their relation to the OpenMP
+The surprising fact that program behavior wasn't changed significantly is
+worth discussing here. We surmise that it is likely due to the
+semantics of variables borrowed from the Cilk codegen and their relation to the OpenMP
 specification of semantics. In particular, \emph{OpenMP doesn't specify a
 memory model for shared variables}. This results in the Cilk style of only
 writing to a shared variable at the end of a parallel section as a perfectly
 valid implementation of OpenMP's specification. In contrast, existing OpenMP
 implementations often write to shared variables on every write. This is a
-potential for performance discrepancy due to differing implementation-defined
-behaviour and we will return to it when discussing performance on the
+potential for performance discrepancy because of differing implementation-defined
+behavior and we will return to it when discussing performance on the
 Barcelona OpenMP task suite. There is of course the fact that technically, by
 copying the value of variables back to the surrounding context even for
 \texttt{private} variables, one isn't following the specification. We surmise
-that in practice this hasn't had an effect due to the fact that
-\texttt{private} variables are generally used for performance, rather than
+that in practice this hasn't had an effect because
+\texttt{private} variables are generally used for performance rather than
 their semantic properties. 
 
 \subsection{Future Work} \label{Sec:Future}
 
-One of the important questions for this work is whether or not the Tapir
-instructions can be extended to cover the full OpenMP semantics. As shown
-in this paper, even the full semantics of OpenMP tasks weren't covered. Runtime
+One of the important questions in this work is whether the Tapir
+instructions can be extended to cover the full OpenMP semantics.
+%As we have shown, even the full semantics of OpenMP tasks weren't covered.
+Runtime
 calls aside, implementing the full semantics of OpenMP pragmas would be a
 significant undertaking. 
 
-As two examples, let us consider the problematic \texttt{atomic} and
+For two examples, consider the problematic \texttt{atomic} and
 \texttt{critical} pragmas from the \texttt{Floorplan} benchmark. The 
 \texttt{atomic} pragma would likely not be too difficult to translate
-from existing OpenMP codegen. One would have to simply keep around and then
+from existing OpenMP codegen. One would need to simply maintain and then
 modify the contents of the original stack pointer to the shared variable. The
 \texttt{critical} section would likely be a little more difficult. Still, it
 should be possible to modify existing OpenMP code to block on that section. 
@@ -1041,32 +1040,32 @@ is a separate question from whether or not it's \emph{useful}. If implementing
 extra features require using special synchronization primitives, or calls into
 runtimes, or any other tool other than the Tapir instructions, then the
 compiler cannot reason about code using those features, and many of the
-advantages we've discussed become moot, e.g. backend compatibility, generic 
+advantages we've discussed become moot, e.g., backend compatibility, generic 
 optimization, etc. Features like the OpenMP \texttt{atomic} pragma don't 
 require any changes to control flow, and therefore are likely to work well 
 with Tapir analyses and optimizations. On the other hand features like OpenMP's
 \texttt{critical} section \emph{do} require changes to control flow that seem
-challenging at best to map onto Tapir's instructions. Furthermore, even if it
+challenging to map onto Tapir's instructions. Furthermore, even if it
 is possible to implement features using the Tapir instructions, it may require 
 such radical entangling of the code that even if analysis is technically
-possible, it becomes infeasible. 
+possible it becomes infeasible. 
 
 An obvious first step towards better OpenMP coverage, other than the features
-listed above, is OpenMP \texttt{parallel for} loops. These are similar enough
+listed above, is handling OpenMP \texttt{parallel for} loops. These are similar enough
 to \texttt{cilk\_for} loops in semantics that this also should be a relatively
 painless next step to adapt from the existing Cilk implementation. 
 
 While OpenMP and Cilk have similar fork-join style semantics that Tapir
-implements naturally, many allow a more flexible mechanism for synchronization:
-futures \cite{qthreads, chapel, hpx}. The primary difference between the
+implements naturally, many allow a more flexible mechanism for synchronization, namely
+futures~\cite{qthreads, chapel, hpx}. The primary difference between the
 fork-join parallelism represented by Tapir and these approaches is that
-child tasks can outlive their parents. Figuring out how to represent this class
+child tasks can outlive their parents. Representing this class
 of parallelism in Tapir represents a significant challenge for future work.
 
 One interesting area for future work would be combining Tapir with work on
-reasoning about locality in LLVM. For example, Hayashi et al.
-\cite{hayashi2015llvm} use address spaces in LLVM to reason about memory
-locality in partitioned global address space (PGAS) systems. By combining
+reasoning about locality in LLVM. For example, Hayashi et al.\ 
+use address spaces in LLVM to reason about memory
+locality in partitioned global address space (PGAS) systems~\cite{hayashi2015llvm}. By combining
 reasoning about code concurrency and locality, one could potentially apply
 optimizations to better schedule and co-locate code and data.
 
@@ -1076,20 +1075,19 @@ There has been significant work on internal representations for parallel
 programs. These can be roughly broken into four categories. 
 
 First, compilers can attach metadata to an existing IR. For example, LLVM has a
-parallel loop metadata construct \cite{llvmref}. This has the benefit of being
+parallel loop metadata construct~\cite{llvmref}. This has the benefit of being
 flexible and requiring minimal work, but historically can be lost during
 optimizations, and any code movement can break the semantics. The flexibility
 of this approach can also be viewed as a negative, as it can compromise
 what can otherwise be a simple, well defined semantics for the IR. 
 
-A second approach is to use intrinsic functions to define parallel tasks
-\cite{ares}. This, like the metadata approach, has the advantage of being
+A second approach is to use intrinsic functions to define parallel tasks~\cite{ares}.
+This, like the metadata approach, has the advantage of being
 flexible and relatively easy to implement, but at the cost of being less well
 defined. There has recently been proposals to standardize intrinsics extensions
 for LLVM to represent parallelism, but we would caution that a large, flexible
-set of intrinsics being added to an already only-partially defined
-\cite{verillvm} language could make reasoning about parallel programs, even
-in an IR settings, infeasible. 
+set of intrinsics being added to an already only-partially defined~\cite{verillvm} language could make reasoning about parallel programs, even
+in an IR setting, infeasible. 
 
 A third approach is to have a separate instruction set for parallelism. This is
 the approach taken by projects like HPIR \cite{zhao2011intermediate}, SPIRE
@@ -1106,19 +1104,19 @@ extending only where necessary.
 While there is general agreement that there needs to be IR support for
 parallelism in parallel programs, there isn't consensus on which of these
 approaches is best. Approaches that are easier at first, such as metadata
-or intrinsic approaches, are similarly easy to extend to be unwieldy. There is
+or intrinsic approaches, are similarly easy to extend to become unwieldy. There is
 a reason that it's difficult to add instructions to LLVM: any added IR
 construct needs to be considered in many locations. From debugging by printing
 out IR, to case analysis for different control flow constructs, having 
-a proper set of instructions to denote parallelism has a lot of advantages. 
+a proper set of instructions to denote parallelism has numerous advantages. 
 Additionally, any hope of having a formal semantics for an IR depends on a 
 simple, concise set of parallelism constructs, something that metadata and
 intrinsics approaches can easily avoid. 
 
 A related approach to composing programming models is to keep the same code
 generation approach, but replace calls into built in runtimes with calls into a
-shared runtime. This is the approach taken by Lithe \cite{lithe}, where Pan et
-al. compose programs using both GNU OpenMP and Intel TBB. This approach succeeds
+shared runtime. This is the approach taken by Lithe, where Pan et
+al.\ compose programs using both GNU OpenMP and Intel TBB~\cite{lithe}. This approach succeeds
 in composing different programming models at run-time, but doesn't enable the
 static analyses that enabled by Tapir.
 
