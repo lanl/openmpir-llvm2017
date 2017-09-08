@@ -290,14 +290,8 @@ If said program uses a different programming model for parallelism, e.g. Cilk,
 there is currently no good solution for ensuring that the two different backends
 will cooperate with management of hardware resources. 
 
-Addressing these concerns this is a major motivation for our use of Tapir.
-\pmnote{This made me remember that Rice and Cray folks did some work on extending LLVM
-to reason about PGAS-like constructs We should probably call that out in 
-this discussion -- that said, I don't recall their approach being general so it 
-does not quite fit the discussion here but I'd have to think a bit harder if it
-would be possible to capture something like MPI operations in some fashion... 
-I will email George a pointer to the paper...} 
-By standardising an IR, in addition to easing the development of optimizations,
+Addressing these concerns this is a major motivation for our use of Tapir.  By
+standardising an IR, in addition to easing the development of optimizations,
 one avoids duplicating work across different implementations. It also enables
 the possibility of multiple programming models coexisting peacefully. We'll
 return to this issue later in Section~\ref{Sec:Discussion} when discussing
