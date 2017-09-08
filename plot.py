@@ -42,7 +42,7 @@ for p in ['floorplan']: # pdat:
     plt.savefig('figs/%s.pdf' %(p))
 '''
 
-for p in ['floorplan']: 
+for p in ['health']: 
     fig = plt.figure()
     axb = fig.add_subplot(111)
     ax = fig.add_subplot(211)
@@ -55,8 +55,8 @@ for p in ['floorplan']:
     ind = np.arange(len(means))
     ax.bar(ind, means, width, yerr=stds)
     ax2.bar(ind, means, width, yerr=stds)
-    ax.set_ylim(170, 190)
-    ax2.set_ylim(0, 3)
+    ax.set_ylim(420, 480)
+    ax2.set_ylim(0, 20)
 
 # hide the spines between ax and ax2
     ax.spines['bottom'].set_visible(False)
@@ -91,6 +91,6 @@ for p in ['floorplan']:
     axb.tick_params(labelcolor='w', top='off', bottom='off', left='off', right='off')
 
     ax.set_xticks(ind)
-    ax.set_xticklabels(['tapir*'] + types[1:])
+    ax.set_xticklabels(types)
     ax.set_title(pdat[p]['title'])
     plt.savefig('figs/%s.pdf' %(p))

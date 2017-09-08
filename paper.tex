@@ -792,8 +792,11 @@ further below, the Intel implementation required a large stack size, we stopped 
 The Intel compiler required increasing the stack size for \texttt{Fibonacci} and
 \texttt{FFT}. The implementation seemed to use significantly more stack space
 than the others, requiring setting \texttt{OMP\_STACKSIZE} to \texttt{256M} for
-computing the 42nd Fibonacci number. \texttt{FFT} ran with an increase to
-\texttt{16M}.  
+computing the 42nd Fibonacci number. \texttt{FFT} ran fine with an increase to
+\texttt{16M}. Clang required a similar increase in \texttt{OMP\_STACKSIZE} for
+\texttt{SparseLU}, needing to be increased to \texttt{64M} to avoid stack
+overflows. GCC and the Tapir implementation required no such modifications. 
+>>>>>>> Updated health plot, added clangs stacksize
 
 For other implementations, we compare to GCC 7.1, Clang 4.0.1, and Intel
 17.0.0. The machine used is a two socket Intel Xeon E5-2683 v3 machine with
