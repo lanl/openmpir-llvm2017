@@ -135,6 +135,10 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 \affiliation{\institution{Center for Computing Research \\ Sandia National Laboratories}}
 \email{slolivi@sandia.gov}
 
+\author{Kei Davis}
+\affiliation{\institution{Los Alamos National Laboratory}}
+\email{kei@lanl.gov}
+
 \author{Pat McCormick}
 \affiliation{\institution{Los Alamos National Laboratory}}
 \email{pat@lanl.gov}
@@ -580,23 +584,23 @@ contains that statement.
 
 For this work we replaced a subset of the OpenMP implementation to generate
 Tapir IR instead of vanilla LLVM IR with OpenMP runtime calls. Specifically, we
-replace the two primary \texttt{task\_spawn} and
-\texttt{task\_wait} pragmas for task parallelism. By re-using code from Schardl et al.\ for code generation
-of Cilk constructs, we were able to easily generate Tapir code for these OpenMP
-pragmas. The ease with which this was completed is a testament to the quality of
-the Tapir implementation. 
+replace the two primary \texttt{task} and \texttt{taskwait} pragmas for task
+parallelism. By re-using code from Schardl et al.\ for code generation of Cilk
+constructs, we were able to easily generate Tapir code for these OpenMP
+pragmas. The ease with which this was completed is a testament to the quality
+of the Tapir implementation. 
 
-While we did implement the codegen for the \texttt{task\_spawn} and
-\texttt{task\_wait} constructs, it's worth noting that even for these
-pragmas the implementation is incomplete. Currently, any clauses modifying the
-behavior of the pragmas is ignored. Probably the most common semantics this
-will change is for the semantcis of variables, e.g.\ \texttt{shared} vs.\ \texttt{private}.
+While we did implement the codegen for the \texttt{task} and
+\texttt{taskwait} constructs, it's worth noting that even for these pragmas
+the implementation is incomplete. Currently, any clauses modifying the behavior
+of the pragmas is ignored. Probably the most common semantics this will change
+is for the semantcis of variables, e.g.\ \texttt{shared} vs.\ \texttt{private}.
 Surprisingly, this had little effect on the correctness of the entire Barcelona
-OpenMP task suite. Indeed, it is likely that fixing this problem would marginally increase
-performance by reducing the number of memory
-copies for variables declared \texttt{private} in OpenMP code.  The fact
-that behaviour wasn't changed significantly is worth revisiting, and we do so
-in Section~\ref{Sec:Discussion}. 
+OpenMP task suite. Indeed, it is likely that fixing this problem would
+marginally increase performance by reducing the number of memory copies for
+variables declared \texttt{private} in OpenMP code.  The fact that behaviour
+wasn't changed significantly is worth revisiting, and we do so in
+Section~\ref{Sec:Discussion}. 
 
 The work represented in this paper is only front-end implementation, which
 means we use the only existing back end for Tapir. The existing back end
@@ -1133,8 +1137,6 @@ this one help to reduce the fragmentation of parallel runtimes, as well as make
 it easier to write optimization for parallel programs. 
 
 \section*{Acknowledgments}
-
-Thanks to Kei Davis for his excellent editing. 
 
 Sandia National Laboratories is a multimission laboratory managed and operated 
 by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
