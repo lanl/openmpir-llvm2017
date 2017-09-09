@@ -185,7 +185,7 @@ intermediate representations \textbf{(IRs)} which allow such transformations
 to be written once with relative ease and apply to a variety of source
 front-end languages such as C or C++.  Historically, the IR of mainstream
 compilers such as LLVM~\cite{lattner2004llvm} or GCC's
-Gimple~\cite{merrill2003generic} haven't suppored parallel constructs. As a
+Gimple~\cite{merrill2003generic} haven't supported parallel constructs. As a
 consequence, compilers using these IRs haven't had the ability to reason
 about parallelism. The recent work of Schardl et al.\ has shown
 that the LLVM IR can be extended to represent fork-join parallelism without
@@ -279,7 +279,7 @@ understand points of contention and interoperability between them. A common
 difficulty among all of these is that reasoning about parallel programs is hard
 and compilers can potentially help reduce this burden. This is exactly
 analogous the problem LLVM solves: compiler optimizations are hard, so sharing
-them is valuable. Tapir is a demonstration that the the LLVM approach to
+them is valuable. Tapir is a demonstration that the LLVM approach to
 compilation of serial code can be effectively extended to help reason about
 parallel code. 
 
@@ -405,7 +405,7 @@ void search(int low, int high) {
 {Simplified compilation of the unoptimized search code from~\figref{search}.  
 \subfigcap{a}~The function \code{search}. The parallel tasks are moved into their own 
 functions and accompanying closures. These functions are then passed to OpenMP runtime 
-calls. This system obfuscates the program, making it infeasable for an optimizer to 
+calls. This system obfuscates the program, making it infeasible for an optimizer to 
 reason about what is happening.}
   \label{fig:runtime_calls}
 \end{figure}
@@ -720,7 +720,7 @@ algorithm. This is a divide and conquer algorithm that  recursively  breaks
 down a Discrete Fourier Transform (DFT) into many smaller DFT’s. In each of the
 divisions multiple tasks are generated.
 \item \texttt{Fibonacci}: computes the $n$th Fibonacci number using a  recursive
-paralellization. While  not  representative  of  an efficient  fibonacci
+parallelization. While  not  representative  of  an efficient  fibonacci
 computation  it  is  still  useful  because  it  is a simple test case of a
 deep tree composed of very fine grain tasks.  
 \item \texttt{Floorplan}: kernel computes the optimal floorplan distribution
@@ -796,7 +796,6 @@ computing the 42nd Fibonacci number. \texttt{FFT} ran fine with an increase to
 \texttt{16M}. Clang required a similar increase in \texttt{OMP\_STACKSIZE} for
 \texttt{SparseLU}, needing to be increased to \texttt{64M} to avoid stack
 overflows. GCC and the Tapir implementation required no such modifications. 
->>>>>>> Updated health plot, added clangs stacksize
 
 For other implementations, we compare to GCC 7.1, Clang 4.0.1, and Intel
 17.0.0. The machine used is a two socket Intel Xeon E5-2683 v3 machine with
@@ -814,7 +813,7 @@ the default Cilk runtime).
 
 As mentioned in the Section~\ref{Sec:Implementation}, the gaps in the implementation
 changed program behavior in a couple cases. In the case of \texttt{FFT}, we were
-forced to remove an unecessary \texttt{task} pragma, as the current implementation
+forced to remove an unnecessary \texttt{task} pragma, as the current implementation
 doesn't insert the implicit barrier at the end of a \texttt{parallel} region. This 
 was a one line fix in the benchmark, and would be fixed properly by handling
 the \texttt{parallel} and \texttt{single} pragmas correctly in our implementation. 
@@ -949,7 +948,7 @@ runtime can execute fork-join parallelism.
 %implementation
 %}
 
-There are two cases we examing using the profiler. The first is the
+There are two cases we examine using the profiler. The first is the
 case when there is a large difference in run times between implementations. For 
 these our hypothesis is that the slower implementations
 are for some reason spending more time in the runtime. As mentioned, 
@@ -1134,6 +1133,9 @@ this one help to reduce the fragmentation of parallel runtimes, as well as make
 it easier to write optimization for parallel programs. 
 
 \section*{Acknowledgments}
+
+Thanks to Kei Davis for his excellent editing. 
+
 Sandia National Laboratories is a multimission laboratory managed and operated 
 by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
