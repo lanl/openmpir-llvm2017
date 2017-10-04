@@ -26,23 +26,23 @@ for p in pdat:
 
 width=0.75
 
-'''
-for p in ['floorplan']: # pdat:
+colors=['#2D8632', '#236467', '#AA6D39', '#AA3C39']
+
+for p in ['alignment', 'fft', 'fib', 'nqueens', 'sort', 'sparselu', 'strassen']:
     fig, ax = plt.subplots()
     means = [np.mean(pdat[p][t]) for t in types]
     means = [m for m in means if not np.isnan(m)]
     stds = [np.std(pdat[p][t]) for t in types]
     stds = [m for m in stds if not np.isnan(m)]
     ind = np.arange(len(means))
-    ax.bar(ind, means, width, yerr=stds)
+    ax.bar(ind, means, width, yerr=stds, color=colors)
     ax.set_ylabel("Time (Seconds, lower is better)")
     ax.set_xticks(ind)
     ax.set_xticklabels(types)
     ax.set_title(pdat[p]['title'])
     plt.savefig('figs/%s.pdf' %(p))
-'''
 
-for p in ['health']: 
+for p in ['health', 'floorplan']: 
     fig = plt.figure()
     axb = fig.add_subplot(111)
     ax = fig.add_subplot(211)
@@ -53,10 +53,15 @@ for p in ['health']:
     stds = [np.std(pdat[p][t]) for t in types]
     stds = [m for m in stds if not np.isnan(m)]
     ind = np.arange(len(means))
-    ax.bar(ind, means, width, yerr=stds)
-    ax2.bar(ind, means, width, yerr=stds)
-    ax.set_ylim(420, 480)
-    ax2.set_ylim(0, 20)
+    ax.bar(ind, means, width, yerr=stds, color=colors)
+    ax2.bar(ind, means, width, yerr=stds, color=colors)
+    if p == 'health':
+        ax.set_ylim(420, 480)
+        ax2.set_ylim(0, 20)
+    if p == 'floorplan':
+        ax.set_ylim(170, 190)
+        ax2.set_ylim(0,3)
+
 
 # hide the spines between ax and ax2
     ax.spines['bottom'].set_visible(False)

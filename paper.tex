@@ -135,10 +135,6 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 \affiliation{\institution{Center for Computing Research \\ Sandia National Laboratories}}
 \email{slolivi@sandia.gov}
 
-\author{Kei Davis}
-\affiliation{\institution{Los Alamos National Laboratory}}
-\email{kei@lanl.gov}
-
 \author{Pat McCormick}
 \affiliation{\institution{Los Alamos National Laboratory}}
 \email{pat@lanl.gov}
@@ -282,8 +278,8 @@ optimizations, or analyses, one much choose which model to target as well as
 understand points of contention and interoperability between them. A common
 difficulty among all of these is that reasoning about parallel programs is hard
 and compilers can potentially help reduce this burden. This is exactly
-analogous the problem LLVM solves: compiler optimizations are hard, so sharing
-them is valuable. Tapir is a demonstration that the LLVM approach to
+analogous to the problem LLVM solves: compiler optimizations are hard, so
+sharing them is valuable. Tapir is a demonstration that the LLVM approach to
 compilation of serial code can be effectively extended to help reason about
 parallel code. 
 
@@ -468,18 +464,18 @@ if.end:
 
 To represent parallelism Tapir introduces the \code{detach}, \code{reattach}, and
 \code{sync} instructions. The \code{detach} statement is syntactically similar to
-a conditional branch in that it is a terminator instruction with with two blocks.
+a conditional branch in that it is a terminator instruction with two blocks.
 However, unlike the conditional branch which denotes a choice between successors, the \code{detach} instruction denotes that its two successors may run in parallel. Semantically,
 the first successor of a \code{detach} instruction is referred to as the \textbf{detached block} and represents a task that can, but is not required to, run in parallel with the
 \textbf{continuation block}, or the second successor to the detach statement. The \code{detach}
-is analagous to a \code{fork} in most fork-join models.
+is analogous to a \code{fork} in most fork-join models.
 
 The end of a task created by a \code{detach} instruction must end with a \code{reattach} instruction to the corresponding continuation block. The \code{reattach} instruction
 is used to denote the end of a parallel task.
 %
 Finally, one may use the \code{sync} instruction to wait for any outstanding tasks created
 by \code{detach} instructions within the current function to complete. The \code{sync}
-instruction is analagous to a \code{join} in most fork-join frameworks.
+instruction is analogous to a \code{join} in most fork-join frameworks.
 
 
 \section{OpenMP Tasks} \label{Sec:OpenMP}
@@ -594,7 +590,7 @@ While we did implement the codegen for the \texttt{task} and
 \texttt{taskwait} constructs, it's worth noting that even for these pragmas
 the implementation is incomplete. Currently, any clauses modifying the behavior
 of the pragmas is ignored. Probably the most common semantics this will change
-is for the semantcis of variables, e.g.\ \texttt{shared} vs.\ \texttt{private}.
+is for the semantics of variables, e.g.\ \texttt{shared} vs.\ \texttt{private}.
 Surprisingly, this had little effect on the correctness of the entire Barcelona
 OpenMP task suite. Indeed, it is likely that fixing this problem would
 marginally increase performance by reducing the number of memory copies for
@@ -612,22 +608,20 @@ address others in the discussion of future work.
 
 There are other issues that had to be overcome to run full OpenMP programs
 using Tapir. Generally, in addition the the \texttt{task} 
-and \texttt{taskwait} pragmas, a program must contain pragmas to initialize OpenMP
-%pragmas in order to run parallel code.
-A standard pattern for building
-task-parallel OpenMP programs is to insert a \texttt{parallel} pragma to start
-the necessary hardware threads, followed immediately by a \texttt{single}
-pragma to have only one thread continue on the specified statement. Then the
-other threads will get work from spawned tasks instead of implicitly executing
-the same code in a data parallel manner. For the purpose of this work we took
-the shortcut of replacing these pragmas with no-ops. This worked well for all
-examples except for one in which after the \texttt{parallel} and
-\texttt{single} pragmas the top level task was called with an unnecessary
-\texttt{task} pragma.  Because the wait was implicit and unhandled by our
-implementation, the simple fix was to remove the \texttt{task} pragma. This was
-the only change required to the source code. Our temporary no-op shortcut, of
-course, doesn't follow the OpenMP specification, and should be addressed by
-future work. Section~\ref{Sec:Future} discusses how how the 
+and \texttt{taskwait} pragmas, a program must contain pragmas to initialize OpenMP.
+A standard pattern for building task-parallel OpenMP programs is to insert a
+\texttt{parallel} pragma to start the necessary hardware threads, followed
+immediately by a \texttt{single} pragma to have only one thread continue on the
+specified statement. Then the other threads will get work from spawned tasks
+instead of implicitly executing the same code in a data parallel manner. For
+the purpose of this work we took the shortcut of replacing these pragmas with
+no-ops. This worked well for all examples except for one in which after the
+\texttt{parallel} and \texttt{single} pragmas the top level task was called
+with an unnecessary \texttt{task} pragma.  Because the wait was implicit and
+unhandled by our implementation, the simple fix was to remove the \texttt{task}
+pragma. This was the only change required to the source code. Our temporary
+no-op shortcut, of course, doesn't follow the OpenMP specification, and should
+be addressed by future work. Section~\ref{Sec:Future} discusses how how the
 implementation can be improved.
 
 All code used for the implementation is available at \\
@@ -694,7 +688,7 @@ detaches the basic block corresponding to the call of \texttt{fib(n-2)}.
 Finally, the continuation for the second call immediately calls sync. This is
 a nice example of code that will be optimized by Tapir. The LLVM code
 shown in \figref{tapir-example} is not optimized. With optimizations turned
-on Tapir will replace a \texttt{detach} of a function call followed
+on, Tapir will replace a \texttt{detach} of a function call followed
 immediately by \texttt{sync} with a simple function call, resulting in faster
 code. 
 
@@ -816,7 +810,7 @@ enable Tapir instructions to be lowered to a parallel runtime (in this case,
 the default Cilk runtime).
 
 As mentioned in the Section~\ref{Sec:Implementation}, the gaps in the implementation
-changed program behavior in a couple cases. In the case of \texttt{FFT}, we were
+changed program behavior in a couple of cases. In the case of \texttt{FFT}, we were
 forced to remove an unnecessary \texttt{task} pragma, as the current implementation
 doesn't insert the implicit barrier at the end of a \texttt{parallel} region. This 
 was a one line fix in the benchmark, and would be fixed properly by handling
@@ -908,35 +902,33 @@ in performance. For example,
 
 \subsection{Profiling}
 
-In this section we speculate \emph{why} the performance varies in
-the ways it does. While we have yet to identify every discrepancy in
-performance, we hope to get some ideas for why the performance of our
-implementation is generally better and where each of the implementations is
-spending the bulk of the execution time. Our primary tool for this task is performance 
-counters. It's worth noting that some information is difficult to infer from 
-performance counters, such as sources of contention, reasons for memory locality,
-etc. Still, they do give us some insight into performance bottlenecks.
+In this section we investigate \emph{why} performance varies in the ways it
+does. While we have yet to identify every discrepancy in performance, we hope
+to get some ideas for why the performance of our implementation is generally
+better and where each of the implementations is spending the bulk of the
+execution time. Our primary tool for this task is profiling. It's worth noting
+that lots of information is difficult to infer from profiling, such as sources
+of contention, reasons for memory locality, etc.
 
-Before we begin understanding why, it's worth noting again that the scope of the 
-work that this paper is responsible for is only the front end. All performance
-gains attributable to the existing Tapir back end and Cilk runtime represent prior work.
-We can break reasons for performance discrepancies into a few categories: 
+It is worth noting again that the scope of the work that this paper is
+responsible for is only the front end. All performance gains attributable to
+the existing Tapir back end and Cilk runtime represent prior work.  We can
+break reasons for performance discrepancies into a few categories:
 \begin{itemize}
 \item Front-end code generation;
 \item IR Optimizations; and
 \item Runtime efficiency.
 \end{itemize}
 While we would like to distinguish between these, it is difficult to do so with
-only performance counter information. A more thorough investigation would
-require deep knowledge of each of the front ends and runtimes. While the
-importance of optimizations of parallel code is clear, we hypothesize that most
-of the disparity present in these results is more a function of runtime
-implementation differences. As justification for this hypothesis, consider
-the \texttt{Fibonacci} benchmark. There are no memory accesses to the heap, 
-and the code leaves little room for optimization (algorithmic rewrites
-aside), so it is effectively a benchmark of how fast a
-runtime can execute fork-join parallelism.
-
+only profiling information. A more thorough investigation would require deep
+knowledge of each of the front ends and runtimes. While the importance of
+optimizations of parallel code is clear, we hypothesize that most of the
+disparity present in these results is more a function of runtime implementation
+differences. As justification for this hypothesis, consider the
+\texttt{Fibonacci} benchmark. There are no memory accesses to the heap, and the
+code leaves little room for optimization (algorithmic rewrites aside), so it is
+effectively a benchmark of how fast a runtime can execute fork-join
+parallelism.
 
 %\wmnote{So actually the memory accesses are happily an optimization Tapir does
 %-- mainly some mem2reg optimization that may not make much of a different
@@ -968,9 +960,11 @@ according to the Linux \texttt{perf} tool.
 \item \texttt{gcc: ~100\% runtime overhead, ~0\% work, ~0\% other}
 \end{itemize}
 This supports our hypothesis that most of the slowdown incurred is overhead in
-the runtime. For Tapir the overhead is relatively small given the
-size of the work chunks, for \texttt{clang} and \texttt{icc} it is
-significantly larger, and for \texttt{gcc} it is overwhelming.
+the runtime. For Tapir the overhead is relatively small given the size of the
+work chunks, for \texttt{clang} and \texttt{icc} it is significantly larger,
+and for \texttt{gcc} it is overwhelming. It's worth noting that \texttt{clang} 
+and \texttt{icc} have effectively the same runtime, so the fact that their 
+overheads are similar is unsurprising. 
 
 For the cases where performance is close between the implementations, such as
 \texttt{sparselu}, we expect run times to be dominated by actual task workloads. This 
@@ -1003,26 +997,26 @@ complicates things, for many programming models it seems at least conceivable
 to map them onto multiple different runtimes. This opens the possibility of
 mixing programming models at compile time by targeting the same runtime. For
 example, if both OpenMP and Cilk targeted Tapir instructions, one could have a
-large application where some parts were written using Cilk, while other used
+large application where some parts were written using Cilk, while others used
 OpenMP, and the result would not suffer the incompatibility problems often
 seen today.
 
-The surprising fact that program behavior wasn't changed significantly is
-worth discussing here. We surmise that it is likely due to the
-semantics of variables borrowed from the Cilk codegen and their relation to the OpenMP
-specification of semantics. In particular, \emph{OpenMP doesn't specify a
-memory model for shared variables}. This results in the Cilk style of only
-writing to a shared variable at the end of a parallel section as a perfectly
-valid implementation of OpenMP's specification. In contrast, existing OpenMP
+The surprising fact that program behavior wasn't changed significantly is worth
+discussing. We surmise that it is likely due to the semantics of variables
+borrowed from the Cilk codegen and their relation to the OpenMP specification
+of semantics. In particular, \emph{OpenMP specifies a very relaxed memory model
+for shared variables}. This results in the Cilk implementation of only writing
+to a shared variable at the end of a parallel section being a perfectly valid
+implementation of OpenMP's specification. In contrast, existing OpenMP
 implementations often write to shared variables on every write. This is a
-potential for performance discrepancy because of differing implementation-defined
-behavior and we will return to it when discussing performance on the
-Barcelona OpenMP task suite. There is of course the fact that technically, by
-copying the value of variables back to the surrounding context even for
-\texttt{private} variables, one isn't following the specification. We surmise
-that in practice this hasn't had an effect because
-\texttt{private} variables are generally used for performance rather than
-their semantic properties. 
+potential for performance discrepancy because of differing
+implementation-defined behavior and we will return to it when discussing
+performance on the Barcelona OpenMP task suite. There is of course the fact
+that technically, by copying the value of variables back to the surrounding
+context even for \texttt{private} variables, one isn't following the
+specification. We surmise that in practice this hasn't had an effect because
+\texttt{private} variables are generally used for performance rather than their
+semantic properties. 
 
 \subsection{Future Work} \label{Sec:Future}
 
@@ -1124,7 +1118,7 @@ generation approach, but replace calls into built in runtimes with calls into a
 shared runtime. This is the approach taken by Lithe, where Pan et
 al.\ compose programs using both GNU OpenMP and Intel TBB~\cite{lithe}. This approach succeeds
 in composing different programming models at run-time, but doesn't enable the
-static analyses that enabled by Tapir.
+static analyses that are enabled by Tapir.
 
 \section{Conclusion} \label{Sec:Conclusion}
 We have shown that Tapir is an excellent IR target for OpenMP tasks. While not
@@ -1138,27 +1132,22 @@ it easier to write optimization for parallel programs.
 
 \section*{Acknowledgments}
 
+Many thanks to Kei Davis for his excellent editing.
+
 Sandia National Laboratories is a multimission laboratory managed and operated 
 by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA-0003525.
 
 This work was supported by the Director, Office of Advanced Scientific
-Computing Research, Office of Science, of the United States Department
-of Energy, under the guidance of Dr. Sonia Sachs. Los Alamos National
-Laboratory is operated by Los Alamos National Security LLC for the U.S.
-Department of Energy under contract DE-AC52-06NA25396.
-
-This research was supported by US National Science Foundation under CRII
-ACI 1565338, CNS 1527076, and CNS 1217948. Los Alamos National
-Laboratory is operated by Los Alamos National Security LLC for the US
-Department of Energy under contract DE-AC52-06NA25396.
-
-Work supported by the Advanced Simulation and Computing program of the
-U.S. Department of Energy's NNSA\@.  Los Alamos National Laboratory is
+Computing Research, Office of Science, of the United States Department of
+Energy, under the guidance of Dr. Sonia Sachs. This research was supported by
+US National Science Foundation under CRII ACI 1565338, CNS 1527076, and CNS
+1217948.  Work supported by the Advanced Simulation and Computing program of
+the U.S. Department of Energy's NNSA\@. Los Alamos National Laboratory is
 managed and operated by Los Alamos National Security, LLC (LANS), under
-contract number DE-AC52-06NA25396 for the Department of Energy's
-National Nuclear Security Administration (NNSA).
+contract number DE-AC52-06NA25396 for the Department of Energy's National
+Nuclear Security Administration (NNSA).
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{annotated}
