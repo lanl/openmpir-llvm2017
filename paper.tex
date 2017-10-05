@@ -1101,7 +1101,7 @@ extending only where necessary.
 While there is general agreement that there needs to be IR support for
 parallelism in parallel programs, there isn't consensus on which of these
 approaches is best. Approaches that are easier at first, such as metadata
-or intrinsic approaches, are similarly easy to extend to become unwieldy. There is
+or intrinsic approaches, are similarly easy to extend but can become unwieldy. There is
 a reason that it's difficult to add instructions to LLVM: any added IR
 construct needs to be considered in many locations. From debugging by printing
 out IR, to case analysis for different control flow constructs, having 
@@ -1111,7 +1111,7 @@ simple, concise set of parallelism constructs, something that metadata and
 intrinsics approaches can easily avoid. 
 
 A related approach to composing programming models is to keep the same code
-generation approach, but replace calls into built in runtimes with calls into a
+generation approach, but replace calls into built-in runtimes with calls into a
 shared runtime. This is the approach taken by Lithe, where Pan et
 al.\ compose programs using both GNU OpenMP and Intel TBB~\cite{lithe}. This approach succeeds
 in composing different programming models at run-time, but doesn't enable the
