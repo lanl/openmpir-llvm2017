@@ -5,7 +5,6 @@
 
 \usepackage{booktabs} % For formal tables
 \usepackage{multicol}
-\usepackage{minted}
 \graphicspath{{./figs/}}
 
 % Dejavu fonts have unicode character support
@@ -695,14 +694,10 @@ code.
 \section{Evaluation} \label{Sec:Evaluation}
 
 To evaluate the use of Tapir we compared performance on the Barcelona OpenMP Task 
-Suite to several existing OpenMP implementations. The suite is a set 
-of tests intended to test performance of OpenMP implementations
-using both irregular and regular tasking.\footnote{An unbalanced tree search benchmark was
-very recently added to the suite. Unfortunately we were unable to succesfully run 
-it on any implementation, even for medium input sizes. We have therefore left 
-it out of our evaluation.  We will continue to work on this benchmark and will 
-include the results if the paper is accepted to the workshop.} The following list provides abridged descriptions of 
-each benchmark taken verbatim from the test suite distribution.
+Suite to several existing OpenMP implementations. The suite is a set of tests
+intended to test performance of OpenMP implementations using both irregular and
+regular tasking. The following list provides abridged descriptions of each
+benchmark taken verbatim from the test suite distribution \cite{bots}.
 
 \begin{itemize}
 \item \texttt{Alignment}: aligns all protein sequences from  an  input
