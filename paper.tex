@@ -26,6 +26,8 @@
 \usepackage{tikz}
 \usetikzlibrary{decorations.pathreplacing,shapes,arrows,positioning,calc}
 
+\newcommand{\McCormick} {M\raise .40ex\hbox{c}Cormick}
+
 \tikzset{
   basic block/.style={
     rectangle,
@@ -135,7 +137,7 @@ morekeywords={omp, for, pragma, omp, task, taskwait}}
 \affiliation{\institution{Center for Computing Research \\ Sandia National Laboratories}}
 \email{slolivi@sandia.gov}
 
-\author{Pat McCormick}
+\author{Patrick \McCormick}
 \affiliation{\institution{Los Alamos National Laboratory}}
 \email{pat@lanl.gov}
 
@@ -181,7 +183,7 @@ common representation of parallel semantics and constructs.
 % combine OpenMP and TBB, in the related work section} 
 
 Compilers implement the majority of their analyses and optimizations on
-intermediate representations \textbf{(IRs)} which allow such transformations
+intermediate representations \textbf{(IRs)} that allow such transformations
 to be written once with relative ease and apply to a variety of source
 front-end languages such as C or C++.  Historically, the IR of mainstream
 compilers such as LLVM~\cite{lattner2004llvm} or GCC's
@@ -219,7 +221,7 @@ Our hope is to move the community towards further conversations on a
 shared IR that can be used for many programming models. The work presented here only
 represents a small step in that direction and there is still a herculean amount
 of design and implementaton details to be considered. We argue that the benefits vastly outweigh 
-the costs and we hope to see additional future work explore additional possibilities. 
+the costs and we hope to see future work explore additional possibilities. 
 
 % I'd skip the subsection...  Not critical, just personal prefs... 
 % \subsection{Outline}
@@ -1134,20 +1136,21 @@ it easier to write optimization for parallel programs.
 
 Many thanks to Kei Davis for his excellent editing.
 
-Sandia National Laboratories is a multimission laboratory managed and operated 
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
-Energy's National Nuclear Security Administration under contract DE-NA-0003525.
-
 This work was supported by the Director, Office of Advanced Scientific
-Computing Research, Office of Science, of the United States Department of
-Energy, under the guidance of Dr. Sonia Sachs. This research was supported by
-US National Science Foundation under CRII ACI 1565338, CNS 1527076, and CNS
-1217948.  Work supported by the Advanced Simulation and Computing program of
-the U.S. Department of Energy's NNSA\@. Los Alamos National Laboratory is
-managed and operated by Los Alamos National Security, LLC (LANS), under
-contract number DE-AC52-06NA25396 for the Department of Energy's National
-Nuclear Security Administration (NNSA).
+Computing Research, Office of Science, of the United States Department
+of Energy, under the guidance of Dr. Sonia Sachs. This research was
+supported by US National Science Foundation under CRII ACI 1565338,
+CNS 1527076, and CNS 1217948 and by the Exascale Computing Project
+(17-SC-20-SC), a collaborative effort of the U.S. Department of Energy
+Office of Science and the National Nuclear Security Administration.
+Los Alamos National Laboratory is managed and operated by Los Alamos
+National Security, LLC (LANS), under contract number DE-AC52-06NA25396
+for the Department of Energy's National Nuclear Security
+Administration (NNSA). Sandia National Laboratories is a multimission
+laboratory managed and operated by National Technology and Engineering
+Solutions of Sandia, LLC., a wholly owned subsidiary of Honeywell
+International, Inc., for the U.S. Department of Energy's National
+Nuclear Security Administration under contract DE-NA-0003525.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{annotated}
