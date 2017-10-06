@@ -1001,19 +1001,25 @@ seen today.
 The surprising fact that program behavior wasn't changed significantly is worth
 discussing. We surmise that it is likely due to the semantics of variables
 borrowed from the Cilk codegen and their relation to the OpenMP specification
-of semantics. In particular, \emph{OpenMP specifies a very relaxed memory model
-for shared variables}. This results in the Cilk implementation of only writing
-to a shared variable at the end of a parallel section being a perfectly valid
+of semantics. In particular, \emph{OpenMP specifies a relaxed memory model
+for shared variables}, in which writes by one thread need only be visible at
+to other threads at explicit or implicit flushes. 
+This results in the Cilk implementation of only writing
+to a shared variable at the end of a parallel section being a valid
 implementation of OpenMP's specification. In contrast, existing OpenMP
-implementations often write to shared variables on every write. This is a
-potential for performance discrepancy because of differing
-implementation-defined behavior and we will return to it when discussing
-performance on the Barcelona OpenMP task suite. There is of course the fact
+implementations sometimes write shared variables to memory on every write access. This is a
+potential for performance discrepancy because of differing 
+implementation behavior.
+%Stephen:This topic is not discuessed later, but was touched on before -- moved?
+%and we will return to it when discussing
+%performance on the Barcelona OpenMP task suite. 
+There is of course the fact
 that technically, by copying the value of variables back to the surrounding
 context even for \texttt{private} variables, one isn't following the
 specification. We surmise that in practice this hasn't had an effect because
-\texttt{private} variables are generally used for performance rather than their
-semantic properties. 
+\texttt{private} variables are often used for input parameters in the 
+progams or for performance rather than their semantic properties.
+Also, \texttt{firstprivate} is the default data-sharing attribute for tasks.
 
 \subsection{Future Work} \label{Sec:Future}
 
