@@ -1017,8 +1017,9 @@ There is of course the fact
 that technically, by copying the value of variables back to the surrounding
 context even for \texttt{private} variables, one isn't following the
 specification. We surmise that in practice this hasn't had an effect because
-\texttt{private} variables are often used for input parameters in the 
-progams or for performance rather than their semantic properties.
+\texttt{private} variables are often used for inputs to calculations that are 
+not accessed after the tasks complete, 
+or for performance rather than their semantic properties.
 Also, \texttt{firstprivate} is the default data-sharing attribute for tasks.
 
 \subsection{Future Work} \label{Sec:Future}
