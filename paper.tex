@@ -886,16 +886,12 @@ slower. GCC results are omitted from graphs for the three timeout cases,
 
 Putting failures aside, performance for our implementation is quite strong,
 generally outperforming or matching the best of existing implementations. For
-benchmarks where the overhead-to-work ratio is high is where the Tapir (and 
-Cilk) implementation shows significant benefit. For example, for the \texttt{Fibonacci}
-benchmark, our implementation runs significantly faster than any of the
-others. While ICC failed for that size input, we did test with smaller inputs
-and found it was similarly outperformed by the Tapir implementation.  \texttt{NQueens}
-and \texttt{FFT} show similar behavior but to lesser degrees. In contrast,
-benchmarks that have a lower overhead to work ratio unsurprisingly differ less
-in performance. For example,
-
-%%% something missing here!
+benchmarks where the overhead-to-work ratio is high is where the Tapir + Cilk
+implementation shows significant benefit. For example, for the
+\texttt{Fibonacci} benchmark, our implementation runs significantly faster than
+any of the others. \texttt{NQueens} and \texttt{FFT} show similar behavior but
+to lesser degrees. In contrast, benchmarks that have a lower overhead to work
+ratio unsurprisingly differ less in performance. 
 
 \subsection{Profiling}
 
