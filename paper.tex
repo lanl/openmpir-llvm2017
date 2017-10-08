@@ -919,10 +919,9 @@ break reasons for performance discrepancies into a few categories:
 \end{itemize}
 While we would like to distinguish between these, it is difficult to do so with
 only profiling information. A more thorough investigation would require deep
-knowledge of each of the front ends and runtimes. While the importance of
-optimizations of parallel code is clear, we hypothesize that most of the
-disparity present in these results is more a function of runtime implementation
-differences. As justification for this hypothesis, consider the
+knowledge of each of the front ends and runtimes. We hypothesize that much of
+the disparity present in these results is more a function of runtime
+implementation differences. As justification for this hypothesis, consider the
 \texttt{Fibonacci} benchmark. There are no memory accesses to the heap, and the
 code leaves little room for optimization (algorithmic rewrites aside), so it is
 effectively a benchmark of how fast a runtime can execute fork-join
@@ -942,22 +941,21 @@ parallelism.
 %implementation
 %}
 
-There are two cases we examine using the profiler. The first is the
-case when there is a large difference in run times between implementations. For 
-these our hypothesis is that the slower implementations
-are for some reason spending more time in the runtime. As mentioned, 
-it is difficult to understand exactly why an implementation is spending more 
-time in the runtime without further investigation, but it is a useful 
-sanity check nonetheless. For this case, we turn to the \texttt{Fib} benchmark.
-Indeed, we get roughly the following breakdowns of work-to-overhead ratio
-according to the Linux \texttt{perf} tool.
+There are two cases we examine using the profiler. The first is the case when
+there is a large difference in run times between implementations. For these our
+hypothesis is that the slower implementations are for some reason spending more
+time in the runtime. As mentioned, it is difficult to understand exactly why an
+implementation is spending more time in the runtime without further
+investigation, but it is a useful sanity check nonetheless. For this case, we
+turn to the \texttt{Fib} benchmark.  Indeed, we get roughly the following
+breakdowns of work-to-overhead ratio according to the Linux \texttt{perf} tool.
 \begin{itemize}
 \item \texttt{tapir: ~30\% runtime overhead, ~50\% work, ~20\% other}
 \item \texttt{clang: ~85\% runtime overhead, ~5\% work, ~10\% other}
 \item \texttt{icc: ~85\% runtime overhead, ~5\% work, ~10\% other}
 \item \texttt{gcc: ~100\% runtime overhead, ~0\% work, ~0\% other}
 \end{itemize}
-This supports our hypothesis that most of the slowdown incurred is overhead in
+This supports our hypothesis that much of the slowdown incurred is overhead in
 the runtime. For Tapir the overhead is relatively small given the size of the
 work chunks, for \texttt{clang} and \texttt{icc} it is significantly larger,
 and for \texttt{gcc} it is overwhelming. It's worth noting that \texttt{clang} 
@@ -973,8 +971,12 @@ bodies.
 Another way we can discriminate the cause of performance discrepency is by disabling 
 Tapir optimizations. This allows us to directly measure the impact that Tapir
 optimizations are having on runtime. For \texttt{fibonacci}, for example,
-disabling optimizations results in a roughly ~2x performance loss. This is likely
-
+disabling optimizations results in a roughly ~2x performance loss. This is
+likely due to Tapir inlining the second task call and moving some memory
+operations into registers. This is strong evidence that Tapir optimizations are
+an important factor in the performance of compiled task-parallel code. Again,
+note that this compounds with runtime performance discrepency to result in the
+measured performance reported in Section~\ref{Sec:Results}.
 
 \section{Discussion} \label{Sec:Discussion}
 
