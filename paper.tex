@@ -275,7 +275,7 @@ In this section we further discuss a significant challenge in HPC:
 fragmentation of parallel programming models. There are many ways to write
 parallel programs~\cite{openmp, qthreads, chapel, cilk, kokkos, legion, upc,
 mpi}.  From libraries, to language extensions, to standalone languages, to
-combinations of the these, the fragmentation of parallel programming models is a
+combinations of these, the fragmentation of parallel programming models is a
 problem that is only getting worse. This means that when writing tooling,
 optimizations, or analyses, one much choose which model to target as well as
 understand points of contention and interoperability between them. A common
@@ -610,9 +610,9 @@ variables such as \texttt{OMP\_NUM\_THREADS} are ignored and replaced by
 address others in the discussion of future work.
 
 There are other issues that had to be overcome to run full OpenMP programs
-using Tapir. Generally, in addition the the \texttt{task} 
-and \texttt{taskwait} pragmas, a program must contain pragmas to initialize OpenMP.
-A standard pattern for building task-parallel OpenMP programs is to insert a
+using Tapir. Generally, in addition the \texttt{task} and \texttt{taskwait}
+pragmas, a program must contain pragmas to initialize OpenMP.  A standard
+pattern for building task-parallel OpenMP programs is to insert a
 \texttt{parallel} pragma to start the necessary hardware threads, followed
 immediately by a \texttt{single} pragma to have only one thread continue on the
 specified statement. Then the other threads will get work from spawned tasks
@@ -624,7 +624,7 @@ with an unnecessary \texttt{task} pragma.  Because the wait was implicit and
 unhandled by our implementation, the simple fix was to remove the \texttt{task}
 pragma. This was the only change required to the source code. Our temporary
 no-op shortcut, of course, doesn't follow the OpenMP specification, and should
-be addressed by future work. Section~\ref{Sec:Future} discusses how how the
+be addressed by future work. Section~\ref{Sec:Future} discusses how the
 implementation can be improved.
 
 All code used for the implementation is available at \\
