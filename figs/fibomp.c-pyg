@@ -1,0 +1,7 @@
+\begin{CodeFigVerbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PY{c+cp}{\PYZsh{}pragma omp task}
+  \PY{n}{x} \PY{o}{=} \PY{n}{fib}\PY{p}{(}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{);}
+\PY{c+cp}{\PYZsh{}pragma omp task}
+  \PY{n}{y} \PY{o}{=} \PY{n}{fib}\PY{p}{(}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{p}{);}
+\PY{c+cp}{\PYZsh{}pragma omp taskwait}
+\end{CodeFigVerbatim}

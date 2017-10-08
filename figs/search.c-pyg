@@ -1,0 +1,12 @@
+\begin{CodeFigVerbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PY{k+kt}{void} \PY{n+nf}{search}\PY{p}{(}\PY{k+kt}{int} \PY{n+nv}{low}\PY{p}{,} \PY{k+kt}{int} \PY{n+nv}{high}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{k+kPredicated}{if} \PY{p}{(}\PY{n}{low} \PY{o}{==} \PY{n}{high}\PY{p}{)} \PY{n}{search\PYZus{}base}\PY{p}{(}\PY{n}{low}\PY{p}{)}\PY{p+pBLOCK}{;}
+  \PY{k}{else} \PY{p}{\PYZob{}}
+    \PY{c+cp}{\PYZsh{}pragma omp task}
+    \PY{n}{search}\PY{p}{(}\PY{n}{low}\PY{p}{,} \PY{p}{(}\PY{n}{low}\PY{o}{+}\PY{n}{high}\PY{p}{)}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p+pBLOCK}{;}
+    \PY{c+cp}{\PYZsh{}pragma omp task}
+    \PY{n}{search}\PY{p}{(}\PY{p}{(}\PY{n}{low}\PY{o}{+}\PY{n}{high}\PY{p}{)}\PY{o}{/}\PY{l+m+mi}{2} \PY{o}{+} \PY{l+m+mi}{1}\PY{p+pBLOCK}{,} \PY{n}{high}\PY{p}{)}\PY{p+pBLOCK}{;}
+    \PY{c+cp}{\PYZsh{}pragma omp taskwait}
+  \PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeFigVerbatim}

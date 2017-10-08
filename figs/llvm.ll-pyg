@@ -1,0 +1,17 @@
+\begin{CodeFigVerbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PY{k}{define} \PY{k}{i32} \PY{n+nv+vg}{@f}\PY{p}{(}\PY{k}{i32} \PY{n+nv}{\PYZpc{}x}\PY{p}{)} \PY{p}{\PYZob{}}
+\PY{n+nl}{entry:}
+  \PY{n+nv}{\PYZpc{}y} \PY{p}{=} \PY{k}{alloca} \PY{k}{i32}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{k}{store} \PY{k}{i32} \PY{l+m}{10}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}y}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{n+nv}{\PYZpc{}cmp} \PY{p}{=} \PY{k}{icmp} \PY{k}{eq} \PY{k}{i32} \PY{n+nv}{\PYZpc{}x}\PY{p}{,} \PY{l+m}{0}
+  \PY{k}{br} \PY{k}{i1} \PY{n+nv}{\PYZpc{}cmp}\PY{p}{,} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}if.then}\PY{p}{,} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}if.end}
+
+\PY{n+nl}{if.then:}
+  \PY{k}{store} \PY{k}{i32} \PY{l+m}{12}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}y}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{k}{br} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}if.end}
+
+\PY{n+nl}{if.end:}
+  \PY{n+nv+nvAnonymous}{\PYZpc{}1} \PY{p}{=} \PY{k}{load} \PY{k}{i32}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}y}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{k}{ret} \PY{k}{i32} \PY{n+nv+nvAnonymous}{\PYZpc{}1}
+\PY{p}{\PYZcb{}}
+\end{CodeFigVerbatim}
