@@ -204,12 +204,12 @@ In this work we put that suggestion to the test, implementing OpenMP tasks by
 compiling them to Tapir instructions. This allows us to both analyze and optimize
 OpenMP programs as well as compile programs written in OpenMP to use other runtimes.
 For this paper our prototype implementation uses the Cilk runtime as a back end,
-and we run our prototype implementation on the Barcelona OpenMP task suite~\cite{barcelona}. 
-We discuss the kinds of optimizations this enables and how
-the work can be extended to include other parallel constructs and semantics
+and we run our prototype implementation on the Barcelona OpenMP task
+suite~\cite{barcelona}.  We discuss the kinds of optimizations this enables and
+how the work can be extended to include other parallel constructs and semantics
 in OpenMP. We also discuss the possibility of extending this work to other
-programming models, which would help to alleviate some of the problems with fragmentation
-previously discussed.
+programming models, which would help to alleviate some of the problems with
+fragmentation previously discussed.
 
 The contributions of this work include
 \begin{itemize}
@@ -700,8 +700,11 @@ code.
 To evaluate the use of Tapir we compared performance on the Barcelona OpenMP Task 
 Suite to several existing OpenMP implementations. The suite is a set of tests
 intended to test performance of OpenMP implementations using both irregular and
-regular tasking. The following list provides abridged descriptions of each
-benchmark taken verbatim from the test suite distribution \cite{barcelona}.
+regular tasking.\footnote{Since original publication, an unbalanced tree search
+benchmark has been added to the benchmark suite. Unfortunately, due to time
+constraints, we weren't able get results for this additional benchmark.} The
+following list provides abridged descriptions of each benchmark taken verbatim
+from the test suite distribution \cite{barcelona}.
 
 \begin{itemize}
 \item \texttt{Alignment}: aligns all protein sequences from  an  input
@@ -967,6 +970,12 @@ expectation is confirmed by investigating performance counters for \texttt{spars
 where every implementation spends roughly 90\% of its time in the task
 bodies. 
 
+Another way we can discriminate the cause of performance discrepency is by disabling 
+Tapir optimizations. This allows us to directly measure the impact that Tapir
+optimizations are having on runtime. For \texttt{fibonacci}, for example,
+disabling optimizations results in a roughly ~2x performance loss. This is likely
+
+
 \section{Discussion} \label{Sec:Discussion}
 
 In this section we discuss the relevance of the results and in the context of the
@@ -1005,35 +1014,33 @@ to other threads at explicit or implicit flushes.
 This results in the Cilk implementation of only writing
 to a shared variable at the end of a parallel section being a valid
 implementation of OpenMP's specification. In contrast, existing OpenMP
-implementations sometimes write shared variables to memory on every write access. This is a
-potential for performance discrepancy because of differing 
+implementations sometimes write shared variables to memory on every write
+access. This is a potential for performance discrepancy because of differing
 implementation behavior.
-%Stephen:This topic is not discuessed later, but was touched on before -- moved?
-%and we will return to it when discussing
-%performance on the Barcelona OpenMP task suite. 
-There is of course the fact
-that technically, by copying the value of variables back to the surrounding
-context even for \texttt{private} variables, one isn't following the
-specification. We surmise that in practice this hasn't had an effect because
-\texttt{private} variables are often used for inputs to calculations that are 
-not accessed after the tasks complete, 
-or for performance rather than their semantic properties.
-Also, \texttt{firstprivate} is the default data-sharing attribute for tasks.
+%Stephen:This topic is not discuessed later, but was touched on before --
+%moved?  and we will return to it when discussing performance on the Barcelona
+%OpenMP task suite. 
+There is of course the fact that technically, by copying the value of variables
+back to the surrounding context even for \texttt{private} variables, one isn't
+following the specification. We surmise that in practice this hasn't had an
+effect because \texttt{private} variables are often used for inputs to
+calculations that are not accessed after the tasks complete, or for performance
+rather than their semantic properties.  Also, \texttt{firstprivate} is the
+default data-sharing attribute for tasks.
 
 \subsection{Future Work} \label{Sec:Future}
 
-One of the important questions in this work is whether the Tapir
-instructions can be extended to cover the full OpenMP semantics.
+One of the important questions in this work is whether the Tapir instructions
+can be used to implement the full OpenMP semantics.
 %As we have shown, even the full semantics of OpenMP tasks weren't covered.
-Runtime
-calls aside, implementing the full semantics of OpenMP pragmas would be a
-significant undertaking. 
+Runtime calls aside, implementing the full semantics of OpenMP pragmas would be
+a significant undertaking. 
 
 For two examples, consider the problematic \texttt{atomic} and
-\texttt{critical} pragmas from the \texttt{Floorplan} benchmark. The 
-\texttt{atomic} pragma would likely not be too difficult to translate
-from existing OpenMP codegen. One would need to simply maintain and then
-modify the contents of the original stack pointer to the shared variable. The
+\texttt{critical} pragmas from the \texttt{Floorplan} benchmark. The
+\texttt{atomic} pragma would likely not be too difficult to translate from
+existing OpenMP codegen. One would need to simply maintain and then modify the
+contents of the original stack pointer to the shared variable. The
 \texttt{critical} section would likely be a little more difficult. Still, it
 should be possible to modify existing OpenMP code to block on that section. 
 
