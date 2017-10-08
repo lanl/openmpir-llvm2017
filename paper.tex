@@ -7,6 +7,14 @@
 \usepackage{multicol}
 \graphicspath{{./figs/}}
 
+\usepackage[x11names]{xcolor}
+\usepackage{fccode}
+\usepackage{cilkbookstyle}
+
+% FCCode macro
+\newcommand{\fccode}[1]{\terminal{\fontsize{7.5}{9}\selectfont #1}}
+\newcommand{\fc}[2]{\PY{#1}{#2}}
+
 % Dejavu fonts have unicode character support
 % \usepackage{DejaVuSansMono}
 \usepackage[T1]{fontenc}
@@ -26,10 +34,13 @@
 \usetikzlibrary{decorations.pathreplacing,shapes,arrows,positioning,calc}
 
 \newcommand{\McCormick} {M\raise .40ex\hbox{c}Cormick}
+\newenvironment{tab}[2][\linewidth]
+{\begin{tabular*}{#1}[t]{@{\extracolsep{\fill}}>{\hspace{4pt}}#2}}%
+{\end{tabular*}}
 
 \tikzset{
-  basic block/.style={
-    rectangle,
+  pblock/.style={
+    circle,
     rounded corners,
     draw=black, thin,
     % minimum width=3.2cm,
@@ -39,7 +50,7 @@
     anchor=west,
     fill=codebgcolor,
     % font={\ttfamily\fontsize{8.5}{10.2}\selectfont},
-    font={\ttfamily\fontsize{7.5}{9}\selectfont},
+    font={\ttfamily\fontsize{16}{18}\selectfont},
     text=terminalcolor,
     draw=codeheadcolor,
     thick,
@@ -211,7 +222,7 @@ in OpenMP. We also discuss the possibility of extending this work to other
 programming models, which would help to alleviate some of the problems with
 fragmentation previously discussed.
 
-The contributions of this work include
+The contributions of this work include:
 \begin{itemize}
   \item A prototype front end that transforms OpenMP task constructs to Tapir IR;
   \item Benchmarks of the implementation using a Cilk runtime back end, showing
@@ -248,7 +259,7 @@ analyses and optimizations.
 
 LLVM has gained traction in the broad community for its simplicity,
 relative ease of both experimentation and modifications, and extensibility~\cite{lattner2004llvm}.
-Historically, LLVM has only had a sequential semantics: there is no explicit notion
+Historically, LLVM has only had sequential semantics: there is no explicit notion
 of concurrent or parallel processes. This has resulted in existing compilers
 treating parallel constructs as thin wrappers for calls into run-time
 systems. These calls are infeasible for the compiler to reason about because of
@@ -317,35 +328,11 @@ of three instructions designed to interface well with an existing compiler.
 
 \begin{figure}[t]
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}l@{}l}
-
 \subfiglabel{a}\\
-\begin{lstlisting}
-void search(int low, int high) {
-  if (low == high) search_base(low);
-  else {
-    #pragma omp task
-    search(low, (low+high)/2);
-    #pragma omp task
-    search((low+high)/2 + 1, high);
-    #pragma omp taskwait
-  }
-}
-\end{lstlisting}
+\ccodefig{figs/search}
 \\
 \subfiglabel{b}\\
-\begin{lstlisting}
-void search(int low, int high) {
-  if (low == high) search_base(low);
-  else {
-    int mid = (low+high)/2;
-    #pragma omp task
-    search(low, mid);
-    #pragma omp task
-    search(mid + 1, high);
-    #pragma omp taskwait
-  }
-}
-\end{lstlisting}
+\ccodefig{figs/search2}
 \vspace{0.1ex}
 \end{tabular*}
 
@@ -381,26 +368,7 @@ infeasible to analyze and/or optimize parallel code.
 
 \begin{figure}[t]
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}l@{}l}
-\begin{lstlisting}
-void task_1(int* clos) {
-  search(*clos[0], (*clos[0] + *clos[1])/2);
-}
-
-void task_2(int* clos) {
-  search(*clos[0], (*clos[0] + *clos[1])/2);
-}
-
-void search(int low, int high) {
-  if (low == high) search_base(low);
-  else {
-    int* closure_1[] = {&low, &high};
-    omp_run_task(task_1, closure_1);
-    int* closure_2[] = {&low, &high};
-    omp_run_task(task_2, closure_2);
-    omp_taskwait();
-  }
-}
-\end{lstlisting}
+\ccodefig{figs/search3}
 \vspace{0.1ex}
 \end{tabular*}
 
@@ -427,35 +395,11 @@ function and its corresponding LLVM code.
 
     \subfiglabel{a} & \subfiglabel{b} \\
 \begin{minipage}[T]{0.45\linewidth}
-      \begin{lstlisting}
-int f(int x) {
-  int y = 10;
-  if (x == 0) {
-    y = 12;
-  }
-  return y;
-}
-      \end{lstlisting}
+\ccodefig{figs/llvm}
     \end{minipage}
 &
     \begin{minipage}[T]{0.45\linewidth}
-\begin{lstlisting}[language=llvm]
-define i32 @f(i32 %x) {
-entry:
-  %y = alloca i32, align 4
-  store i32 10, i32* %y, align 4
-  %cmp = icmp eq i32 %x, 0
-  br i1 %cmp, label %if.then, label %if.end
-
-if.then:
-  store i32 12, i32* %y, align 4
-  br label %if.end
-
-if.end:
-  %1 = load i32, i32* %y, align 4
-  ret i32 %1
-}
-\end{lstlisting}
+\llcodefig{figs/llvm}
     \end{minipage}\\
     \addlinespace[2ex]
     \bottomrule
@@ -502,43 +446,58 @@ the (N-1)th and (N-2)th Fibonacci numbers.  The \texttt{taskwait} ensures that
 the child tasks have completed before their answers are combined to yield the
 final result.
 
-\begin{figure*}
-\begin{center}
-\begin{tabular}{| c c c | c c c | c c c |}
-\hline
- &
-\begin{lstlisting}
-int fib(int n)
-{                    // A
-  if (n < 2)
-    return n;
-  else
-  {
-    int x, y;
-    #pragma omp task
-      x = fib(n-1);  // B
-    #pragma omp task
-      y = fib(n-2);  // C
-    #pragma omp taskwait
-    return (x+y);    // D
-  }
-}
-\end{lstlisting}
-& & &
-    \centering{
-   \raisebox{-0.6in}{\includegraphics[scale=0.35]{fib-task-graph.pdf}}
+\begin{figure*}[t]
+  \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lll}
+    \subfiglabel{a} & \subfiglabel{b} & \subfiglabel{c} \\
+    \begin{minipage}[T]{0.33\linewidth}
+      \begin{flushleft}
+        \ccodefig{figs/fibcode}
+      \end{flushleft}
+    \end{minipage}
+    &
+    \begin{minipage}[T]{0.33\linewidth}
+    \centering
+        \begin{tikzpicture}[slave]
+          \node [pblock] (A)
+          {A};
+          \node [pblock, below= of A, xshift=-.7cm, yshift=.15cm] (B)
+          {B};
+          \node [pblock, below= of A, xshift=.7cm, yshift=.15cm] (C)
+          {C};
+          \node [pblock, below= of C, xshift=-.7cm,
+          yshift=.15cm] (D)
+          {D};
+          \path [cfedge]
+          (A)  edge node {} (B)
+          (A)  edge node {} (C)
+          (B)  edge node {} (D)
+          (C)  edge node {} (D);
+        \end{tikzpicture}
+    \end{minipage}
+    &
+    \begin{minipage}[T]{0.33\linewidth}
+    \centering
+    { \large
+    \begin{tabular}{ |l||c|c|c|  }
+      \hline
+      \textbf{Time} & $t_0$ & $t_1$ & $t_2$\\
+      \hline
+      \textbf{Thread 0}  & A    & B & D\\
+      \hline
+      \textbf{Thread 1}  &      & C &  \\
+      \hline
+    \end{tabular}
     }
-& & &
-    \centering{
-     \raisebox{-0.25in}{\includegraphics[scale=0.35]{fib-schedule.pdf}}
-    }
- &  \\
-\hline
-\end{tabular}
-\end{center}
-\caption{Code, task graph, and schedule of a simple brute force recursive
-Fibonacci number calculation on two threads.}
-\label{fig:fib-graph-to-schedule}
+    \end{minipage}\\
+\addlinespace[0.5ex]
+% ~
+%     \\
+    \bottomrule
+  \end{tabular*}
+  \caption{Code, task graph, and schedule of a simple brute force recursive
+  Fibonacci number calculation on two threads.}
+  \label{fig:fib-graph-to-schedule}
+\vspace{-.4cm}
 \end{figure*}
 
 The initial design of the OpenMP task model established
@@ -642,40 +601,11 @@ that is generated.
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ll}
 \subfiglabel{a} & \subfiglabel{b} \\
 \begin{minipage}[T]{0.45\linewidth}
-\begin{lstlisting}
-  #pragma omp task
-    x = fib(n-1);
-  #pragma omp task
-    y = fib(n-2);
-  #pragma omp taskwait
-\end{lstlisting}
+\ccodefig{figs/fibomp}
 \end{minipage}
 &
 \begin{minipage}[T]{0.45\linewidth}
-\begin{lstlisting}[language=llvm]
-if.end:
-  detach label %det.achd, label %det.cont
-
-det.achd:
-  %2 = load i32, i32* %n.addr, align 4
-  %sub = sub nsw i32 %2, 1
-  %call = call i32 @fib(i32 %sub)
-  store i32 %call, i32* %x, align 4
-  reattach label %det.cont
-
-det.cont:
-  detach label %det.achd1, label %det.cont4
-
-det.achd1:
-  %3 = load i32, i32* %n.addr, align 4
-  %sub2 = sub nsw i32 %3, 2
-  %call3 = call i32 @fib(i32 %sub2)
-  store i32 %call3, i32* %y, align 4
-  reattach label %det.cont4
-
-det.cont4:
-  sync label %sync.continue
-\end{lstlisting}
+\llcodefig{figs/fibtapir}
 \end{minipage}\\
 \addlinespace[2ex]
 \bottomrule
@@ -968,7 +898,7 @@ expectation is confirmed by investigating performance counters for \texttt{spars
 where every implementation spends roughly 90\% of its time in the task
 bodies.
 
-Another way we can discriminate the cause of performance discrepency is by disabling 
+Another way we can discriminate the cause of performance discrepency is by disabling
 Tapir optimizations. This allows us to directly measure the impact that Tapir
 optimizations are having on runtime. For \texttt{fibonacci}, for example,
 disabling optimizations results in a roughly ~2x performance loss. This is
@@ -1021,7 +951,7 @@ access. This is a potential for performance discrepancy because of differing
 implementation behavior.
 %Stephen:This topic is not discuessed later, but was touched on before --
 %moved?  and we will return to it when discussing performance on the Barcelona
-%OpenMP task suite. 
+%OpenMP task suite.
 There is of course the fact that technically, by copying the value of variables
 back to the surrounding context even for \texttt{private} variables, one isn't
 following the specification. We surmise that in practice this hasn't had an
@@ -1036,7 +966,7 @@ One of the important questions in this work is whether the Tapir instructions
 can be used to implement the full OpenMP semantics.
 %As we have shown, even the full semantics of OpenMP tasks weren't covered.
 Runtime calls aside, implementing the full semantics of OpenMP pragmas would be
-a significant undertaking. 
+a significant undertaking.
 
 For two examples, consider the problematic \texttt{atomic} and
 \texttt{critical} pragmas from the \texttt{Floorplan} benchmark. The

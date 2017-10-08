@@ -1,66 +1,65 @@
-#
-# Makefile for acmart package
-#
-# This file is in public domain
-#
-# $Id: Makefile,v 1.10 2016/04/14 21:55:57 boris Exp $
-#
+# Standard Makefile for compiling LaTeX documents in the Supertech
+# group.
 
-PACKAGE=acmart
+DOC=$(shell basename $(CURDIR))
 
-PAPERS = \
-	paper.tex
+# This line is intentionally blank.
 
-PDF = ${PAPERS:%.tex=%.pdf}
+TARGETS=$(patsubst %,%.pdf,$(DOC))
 
-all:  ${PDF}
+OTHERS = Makefile # plain-url.bst supertech.sty allpapers.bib
+
+DEPS_DIR = .deps
+
+INCLUDE_DIR=.
+
+LATEXMK = TEXINPUTS=$(INCLUDE_DIR)/: BIBINPUTS=$(INCLUDE_DIR)/: BSTINPUTS=$(INCLUDE_DIR)/: latexmk
+LATEXMK_FLAGS = -pdflatex="pdflatex --shell-escape %O %S" -pdf -dvi- -ps- -recorder -M -MP \
+                  -e 'show_cus_dep();' -r latexmkrc \
+
+default: $(DOC).pdf
+.PHONY:  pdf default all remake clean allclean
+
+all: $(TARGETS)
+
+-include $(DEPS_DIR)/$(DOC).pdfP
+
+ifneq (,$(findstring B,$(MAKEFLAGS)))
+LATEXMK_FLAGS += -gg
+endif
+
+$(DEPS_DIR) :
+	if [ ! -d $(DEPS_DIR) ]; then mkdir $@; fi
+
+$(DOC).pdf : $(OTHERS)
+
+###########################################################################
+## Make targets for cleaning
+
+clean%:
+	rm -f $*.aux $*.ps $*.pdf $*.dvi $*.bbl $*.blg $*.tmp $*.lof $*.log $*.toc $*.out $*.fls $*.fdb_latexmk $(DEPS_DIR)/$*.pdfP *~ *.tex.bak
+
+clean: clean$(DOC)
+
+allclean:
+	rm -f *.aux *.dvi *.bbl *.blg *.tmp *.lof *.log *.toc *.out *.fls *.fdb_latexmk $(DEPS_DIR)/*.pdfP $(DOC).pdf *~
 
 
-%.pdf:  %.dtx   $(PACKAGE).cls figs/*.pdf
-	pdflatex --shell-escape $<
-	- bibtex $*
-	pdflatex --shel-escape $<
-	- makeindex -s gind.ist -o $*.ind $*.idx
-	- makeindex -s gglo.ist -o $*.gls $*.glo
-	pdflatex $<
-	while ( grep -q '^LaTeX Warning: Label(s) may have changed' $*.log) \
-	do pdflatex --shell-escape $<; done
 
-%.cls:   %.ins %.dtx  
-	pdflatex $<
+###########################################################################
+## Make targets for document
 
-%.pdf:  %.tex   $(PACKAGE).cls ACM-Reference-Format.bst
-	pdflatex --shell-escape $<
-	- bibtex $*
-	pdflatex --shell-escape $<
-	pdflatex --shell-escape $<
-	while ( grep -q '^LaTeX Warning: Label(s) may have changed' $*.log) \
-	do pdflatex --shell-escape $<; done
+pdf : $(DOC).pdf
 
-paper.pdf: paper.tex
+%.pdf : %.tex $(OTHERS)
+	if [ ! -e $(DEPS_DIR) ]; then mkdir $(DEPS_DIR); fi
+	$(LATEXMK) $(LATEXMK_FLAGS) -MF $(DEPS_DIR)/$@P $<
+	if [ -e $@ ]; then touch $@; fi
 
-
-.PRECIOUS:  $(PACKAGE).cfg $(PACKAGE).cls
-
-
-clean:
-	$(RM)  $(PACKAGE).cls *.log *.aux \
-	*.cfg *.glo *.idx *.toc \
-	*.ilg *.ind *.out *.lof \
-	*.lot *.bbl *.blg *.gls *.cut *.hd \
-	*.dvi *.ps *.thm *.tgz *.zip *.rpi
-
-distclean: clean
-	$(RM) $(PDF) *-converted-to.pdf
-
-#
-# Archive for the distribution. Includes typeset documentation
-#
-archive:  all clean
-	tar -C .. -czvf ../$(PACKAGE).tgz --exclude '*~' --exclude '*.tgz' --exclude '*.zip'  --exclude CVS --exclude '.git*' $(PACKAGE); mv ../$(PACKAGE).tgz .
-
-zip:  all clean
-	zip -r  $(PACKAGE).zip * -x '*~' -x '*.tgz' -x '*.zip' -x CVS -x 'CVS/*'
-
-documents.zip: all
-	zip $@ paper.pdf
+# Some nonsense that latexmk doesn't understand with minted can be fixed by telling that these rules are easy.
+%.w18 %.out.pyg %.aex: %.tex
+	@echo > /dev/null
+# remake :
+# 	if [ ! -e $(DEPS_DIR) ]; then mkdir $(DEPS_DIR); fi
+# 	$(LATEXMK) -g -deps-out=$(DEPS_DIR)/$(DOC).pdfP $(DOC).tex
+# 	if [ -e $(DOC).pdf ]; then touch $(DOC).pdf; fi
