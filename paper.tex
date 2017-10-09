@@ -132,7 +132,8 @@
 \lstset{basicstyle=\tt\small, language=C,
 morekeywords={omp, for, pragma, omp, task, taskwait}}
 
-\title{OpenMP+Tapir: A Case Study of Using Tapir as a Common Parallel Intermediate Representation}
+\title{OpenMPIR}
+\subtitle{Implementing OpenMP Tasks with Tapir}
 
 \author{George Stelle}
 \affiliation{\institution{Los Alamos National Laboratory}}
@@ -967,7 +968,7 @@ calculations that are not accessed after the tasks complete, or for performance
 rather than their semantic properties.  Also, \texttt{firstprivate} is the
 default data-sharing attribute for tasks.
 
-\subsection{Future Work} \label{Sec:Future}
+\section{Future Work} \label{Sec:Future}
 
 One of the important questions in this work is whether the Tapir instructions
 can be used to implement the full OpenMP semantics.
@@ -1017,7 +1018,7 @@ locality in partitioned global address space (PGAS) systems~\cite{hayashi2015llv
 reasoning about code concurrency and locality, one could potentially apply
 optimizations to better schedule and co-locate code and data.
 
-\subsection{Related Work} \label{Sec:Related}
+\section{Related Work} \label{Sec:Related}
 
 There has been significant work on internal representations for parallel
 programs. These can be roughly broken into four categories.
