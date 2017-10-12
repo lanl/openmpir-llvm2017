@@ -5,7 +5,7 @@ DOC=$(shell basename $(CURDIR))
 
 # This line is intentionally blank.
 
-TARGETS=$(patsubst %,%.pdf,$(DOC))
+#TARGETS=$(patsubst %,%.pdf,$(DOC))
 
 OTHERS = Makefile # plain-url.bst supertech.sty allpapers.bib
 
@@ -17,10 +17,7 @@ LATEXMK = TEXINPUTS=$(INCLUDE_DIR)/: BIBINPUTS=$(INCLUDE_DIR)/: BSTINPUTS=$(INCL
 LATEXMK_FLAGS = -pdflatex="pdflatex --shell-escape %O %S" -pdf -dvi- -ps- -recorder -M -MP \
                   -e 'show_cus_dep();' -r latexmkrc \
 
-default: $(DOC).pdf
-.PHONY:  pdf default all remake clean allclean
-
-all: $(TARGETS)
+all: paper.pdf
 
 -include $(DEPS_DIR)/$(DOC).pdfP
 
