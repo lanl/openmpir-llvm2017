@@ -1,0 +1,20 @@
+\begin{CodeFigVerbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PY{k+kt}{void} \PY{n+nf}{task\PYZus{}1}\PY{p}{(}\PY{k+kt}{int}\PY{o}{*} \PY{n+nv}{clos}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{n}{search}\PY{p}{(}\PY{o}{*}\PY{n}{clos}\PY{o}{[}\PY{l+m+mi}{0}\PY{o}{]}\PY{p+pBLOCK}{,} \PY{p}{(}\PY{o}{*}\PY{n}{clos}\PY{o}{[}\PY{l+m+mi}{0}\PY{o}{]} \PY{o}{+} \PY{o}{*}\PY{n}{clos}\PY{o}{[}\PY{l+m+mi}{1}\PY{o}{]}\PY{p}{)}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p+pBLOCK}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void} \PY{n+nf}{task\PYZus{}2}\PY{p}{(}\PY{k+kt}{int}\PY{o}{*} \PY{n+nv}{clos}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{n}{search}\PY{p}{(}\PY{o}{*}\PY{n}{clos}\PY{o}{[}\PY{l+m+mi}{0}\PY{o}{]}\PY{p+pBLOCK}{,} \PY{p}{(}\PY{o}{*}\PY{n}{clos}\PY{o}{[}\PY{l+m+mi}{0}\PY{o}{]} \PY{o}{+} \PY{o}{*}\PY{n}{clos}\PY{o}{[}\PY{l+m+mi}{1}\PY{o}{]}\PY{p}{)}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p+pBLOCK}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void} \PY{n+nf}{search}\PY{p}{(}\PY{k+kt}{int} \PY{n+nv}{low}\PY{p}{,} \PY{k+kt}{int} \PY{n+nv}{high}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{k+kPredicated}{if} \PY{p}{(}\PY{n}{low} \PY{o}{==} \PY{n}{high}\PY{p}{)} \PY{n}{search\PYZus{}base}\PY{p}{(}\PY{n}{low}\PY{p}{)}\PY{p+pBLOCK}{;}
+  \PY{k}{else} \PY{p}{\PYZob{}}
+    \PY{k+kt+ktBLOCK}{int}\PY{o}{*} \PY{n+nv}{closure\PYZus{}1}\PY{o}{[]} \PY{o}{=} \PY{p}{\PYZob{}}\PY{o}{\PYZam{}}\PY{n}{low}\PY{p+pBLOCK}{,} \PY{o}{\PYZam{}}\PY{n}{high}\PY{p}{\PYZcb{}}\PY{p+pBLOCK}{;}
+    \PY{n}{omp\PYZus{}run\PYZus{}task}\PY{p}{(}\PY{n}{task\PYZus{}1}\PY{p}{,} \PY{n}{closure\PYZus{}1}\PY{p}{)}\PY{p+pBLOCK}{;}
+    \PY{k+kt+ktBLOCK}{int}\PY{o}{*} \PY{n+nv}{closure\PYZus{}2}\PY{o}{[]} \PY{o}{=} \PY{p}{\PYZob{}}\PY{o}{\PYZam{}}\PY{n}{low}\PY{p+pBLOCK}{,} \PY{o}{\PYZam{}}\PY{n}{high}\PY{p}{\PYZcb{}}\PY{p+pBLOCK}{;}
+    \PY{n}{omp\PYZus{}run\PYZus{}task}\PY{p}{(}\PY{n}{task\PYZus{}2}\PY{p}{,} \PY{n}{closure\PYZus{}2}\PY{p}{)}\PY{p+pBLOCK}{;}
+    \PY{n}{omp\PYZus{}taskwait}\PY{p}{(}\PY{p}{)}\PY{p+pBLOCK}{;}
+  \PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeFigVerbatim}

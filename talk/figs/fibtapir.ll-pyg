@@ -1,0 +1,24 @@
+\begin{CodeFigVerbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PY{n+nl}{if.end:}
+  \PY{k}{detach} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}det.achd}\PY{p}{,} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}det.cont}
+
+\PY{n+nl}{det.achd:}
+  \PY{n+nv+nvAnonymous}{\PYZpc{}2} \PY{p}{=} \PY{k}{load} \PY{k}{i32}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}n.addr}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{n+nv}{\PYZpc{}sub} \PY{p}{=} \PY{k}{sub} \PY{k}{nsw} \PY{k}{i32} \PY{n+nv+nvAnonymous}{\PYZpc{}2}\PY{p}{,} \PY{l+m}{1}
+  \PY{n+nv}{\PYZpc{}call} \PY{p}{=} \PY{k}{call} \PY{k}{i32} \PY{n+nv+vg}{@fib}\PY{p}{(}\PY{k}{i32} \PY{n+nv}{\PYZpc{}sub}\PY{p}{)}
+  \PY{k}{store} \PY{k}{i32} \PY{n+nv}{\PYZpc{}call}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}x}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{k}{reattach} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}det.cont}
+
+\PY{n+nl}{det.cont:}
+  \PY{k}{detach} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}det.achd1}\PY{p}{,} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}det.cont4}
+
+\PY{n+nl}{det.achd1:}
+  \PY{n+nv+nvAnonymous}{\PYZpc{}3} \PY{p}{=} \PY{k}{load} \PY{k}{i32}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}n.addr}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{n+nv}{\PYZpc{}sub2} \PY{p}{=} \PY{k}{sub} \PY{k}{nsw} \PY{k}{i32} \PY{n+nv+nvAnonymous}{\PYZpc{}3}\PY{p}{,} \PY{l+m}{2}
+  \PY{n+nv}{\PYZpc{}call3} \PY{p}{=} \PY{k}{call} \PY{k}{i32} \PY{n+nv+vg}{@fib}\PY{p}{(}\PY{k}{i32} \PY{n+nv}{\PYZpc{}sub2}\PY{p}{)}
+  \PY{k}{store} \PY{k}{i32} \PY{n+nv}{\PYZpc{}call3}\PY{p}{,} \PY{k}{i32}\PY{p}{*} \PY{n+nv}{\PYZpc{}y}\PY{p}{,} \PY{k}{align} \PY{l+m}{4}
+  \PY{k}{reattach} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}det.cont4}
+
+\PY{n+nl}{det.cont4:}
+  \PY{k}{sync} \PY{k+kt}{label} \PY{n+nv}{\PYZpc{}sync.continue}
+\end{CodeFigVerbatim}

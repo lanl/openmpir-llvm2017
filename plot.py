@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 
+
+import csv
 pdat = {}
 pdat['alignment'] = {'title' : "Alignment"}
 pdat['fft'] = {'title' : "FFT"}
@@ -13,7 +15,7 @@ pdat['sort'] = {'title' : "Sort"}
 pdat['sparselu'] = {'title' : "SparseLU"}
 pdat['strassen'] = {'title' : "Strassen"}
 
-types = ['tapir', 'icc', 'clang', 'gcc']
+types = ['tapir', 'icc', 'clang', 'gcc', 'tapir-omp']
 
 for p in pdat:
     for t in types:
@@ -24,13 +26,19 @@ for p in pdat:
                          for f in fs]
         print(np.mean(pdat[p][t]))
 
-width=0.75
+with open("means.csv", 'w') as f:
+    wr = csv.writer(f)
+    wr.writerow(['compiler'] + list(pdat.keys()))
+    for t in types:
+        wr.writerow([t] + [np.mean(pdat[p][t]) for p in pdat])
 
+width=0.75
 colors=['#2D8632', '#236467', '#AA6D39', '#AA3C39']
 
 for p in ['alignment', 'fft', 'fib', 'nqueens', 'sort', 'sparselu', 'strassen']:
     fig, ax = plt.subplots()
     means = [np.mean(pdat[p][t]) for t in types]
+    valid_types = [t for (t,m) in zip(types, means) if not np.isnan(m)]
     means = [m for m in means if not np.isnan(m)]
     stds = [np.std(pdat[p][t]) for t in types]
     stds = [m for m in stds if not np.isnan(m)]
@@ -38,9 +46,9 @@ for p in ['alignment', 'fft', 'fib', 'nqueens', 'sort', 'sparselu', 'strassen']:
     ax.bar(ind, means, width, yerr=stds, color=colors)
     ax.set_ylabel("Time (Seconds, lower is better)")
     ax.set_xticks(ind)
-    ax.set_xticklabels(types)
+    ax.set_xticklabels(valid_types)
     ax.set_title(pdat[p]['title'])
-    plt.savefig('figs/%s.pdf' %(p))
+    plt.savefig('figs/%s.png' %(p))
 
 for p in ['health', 'floorplan']: 
     fig = plt.figure()
@@ -49,6 +57,7 @@ for p in ['health', 'floorplan']:
     ax2 = fig.add_subplot(212, sharex=ax)
 
     means = [np.mean(pdat[p][t]) for t in types]
+    valid_types = [t for (t,m) in zip(types, means) if not np.isnan(m)]
     means = [m for m in means if not np.isnan(m)]
     stds = [np.std(pdat[p][t]) for t in types]
     stds = [m for m in stds if not np.isnan(m)]
@@ -96,6 +105,6 @@ for p in ['health', 'floorplan']:
     axb.tick_params(labelcolor='w', top='off', bottom='off', left='off', right='off')
 
     ax.set_xticks(ind)
-    ax.set_xticklabels(types)
+    ax.set_xticklabels(valid_types)
     ax.set_title(pdat[p]['title'])
-    plt.savefig('figs/%s.pdf' %(p))
+    plt.savefig('figs/%s.png' %(p))

@@ -1,0 +1,9 @@
+\begin{CodeFigVerbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8}]
+\PY{k+kt}{int} \PY{n+nf}{f}\PY{p}{(}\PY{k+kt}{int} \PY{n+nv}{x}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{k+kt+ktBLOCK}{int} \PY{n+nv}{y} \PY{o}{=} \PY{l+m+mi}{10}\PY{p+pBLOCK}{;}
+  \PY{k+kPredicated}{if} \PY{p}{(}\PY{n}{x} \PY{o}{==} \PY{l+m+mi}{0}\PY{p}{)} \PY{p}{\PYZob{}}
+    \PY{n}{y} \PY{o}{=} \PY{l+m+mi}{12}\PY{p}{;}
+  \PY{p}{\PYZcb{}}
+  \PY{k}{return} \PY{n}{y}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeFigVerbatim}
